@@ -6,83 +6,83 @@ const COUNTER_KEY = "waryuhu:counter"
 const DEVICE_ID_KEY = "waryuhu:deviceId"
 
 const WHITELISTED_USERS = [
-  { displayName: "Wahyudi", jobTitle: "HEAD OF DIGITAL BUSINESS DIVISON" },
-  { displayName: "Silvia Phungky", jobTitle: "Software Developers" },
-  { displayName: "Aditya Brahmayoga", jobTitle: "Ui/Ux Designer" },
-  { displayName: "Mira Iskarnita A", jobTitle: "HEAD OF UI/UX DEPARTMENT" },
-  { displayName: "Reno Rizdano", jobTitle: "DIGITAL PRODUCT MANAGER" },
-  { displayName: "Fadilla Tourizqua Zain", jobTitle: "Head Of Digital Marketing Department" },
-  { displayName: "Teguh Riyanto", jobTitle: "GROWTH MARKETING OFFICER" },
-  { displayName: "Karina Nuzul Fitria", jobTitle: "DIGITAL ACTIVATION OFFICER" },
-  { displayName: "Anis Ferisa Nurlistiani", jobTitle: "DIGITAL PRODUCT MANAGER" },
-  { displayName: "Yesty Desca Refita Putri", jobTitle: "GRAPHIC DESIGNER" },
-  { displayName: "Widya Sitaresmi", jobTitle: "HEAD OF DIGITAL PRODUCT MANAGEMENT DEPARTMENT" },
-  { displayName: "Rafli Putra", jobTitle: "Software Developers" },
-  { displayName: "Ilyyas Sukmadjarna", jobTitle: "Software Developers" },
-  { displayName: "Joshua Pohan", jobTitle: "Software Developers" },
-  { displayName: "Muhammad Yuka Langbuana", jobTitle: "HEAD OF SOFTWARE DELIVERY DEPARTMENT" },
-  { displayName: "Rizky Muhammad Reza", jobTitle: "Software Developers" },
-  { displayName: "Muhammad Revy Saladdin", jobTitle: "BRANDING & ACQUISITION OFFICER" },
-  { displayName: "Said Muhammad Yahya", jobTitle: "DIGITAL PRODUCT MANAGER" },
-  { displayName: "Ruth Marlina Hutabarat", jobTitle: "Project Manager / Scrum Master" },
-  { displayName: "Hendra Nugraha", jobTitle: "HEAD OF IT - OPERATIONAL DEPARTMENT" },
-  { displayName: "Ayodhia Tri Harmanto", jobTitle: "IT SERVICE MANAGEMENT LEAD" },
-  { displayName: "Marsel Widjaja", jobTitle: "Software Developers" },
-  { displayName: "Ari Arsadi", jobTitle: "Software Developers" },
-  { displayName: "Irfan Asidiq", jobTitle: "Software Developers" },
-  { displayName: "Handik Yuwono", jobTitle: "AI SPECIALIST" },
-  { displayName: "Michael Sotaronggal Manurung", jobTitle: "IT DATA SCIENTIST" },
-  { displayName: "Rezha Satria", jobTitle: "HEAD OF BUSINESS ENABLEMENT DEPARTMENT" },
-  { displayName: "Ivan Julius Liefrance", jobTitle: "DIGITAL PRODUCT MANAGER" },
-  { displayName: "Yulia Melda", jobTitle: "DIGITAL PRODUCT MANAGER" },
-  { displayName: "Poppy Buana Mega Putri", jobTitle: "IT Risk Management Officer" },
-  { displayName: "Muhammad Ahadian Razzaq", jobTitle: "Business Analyst" },
-  { displayName: "Paramita Sari", jobTitle: "DEPUTY HEAD OF DIGITAL BUSINESS DIVISON" },
-  { displayName: "Rheco Paradhika Kusuma", jobTitle: "IT Data Scientist" },
-  { displayName: "Rifqi Dika Hamana", jobTitle: "Software Developers" },
-  { displayName: "Gagah Kharismanuary", jobTitle: "Software Developers" },
-  { displayName: "Andi Danca Prima Raharja", jobTitle: "Software Developers" },
-  { displayName: "Achmad Fauzi", jobTitle: "Software Developers" },
-  { displayName: "Hakki Haromain", jobTitle: "Project Manager / Scrum Master" },
-  { displayName: "Aditya Fabio Hariawan", jobTitle: "Software Developers" },
-  { displayName: "Hendra Pria Utama", jobTitle: "Software Developers" },
-  { displayName: "Alfina Megasiwi", jobTitle: "Software Developers" },
-  { displayName: "Rafli Hidayat", jobTitle: "Ui/Ux Designer" },
-  { displayName: "Nur Choirudin", jobTitle: "Software Developers" },
-  { displayName: "Muhammad Noor", jobTitle: "IOS DEVELOPER" },
-  { displayName: "Sri Wahyuni", jobTitle: "Software Developers" },
-  { displayName: "Muhammad Afifuddin Al Rasyid", jobTitle: "Software Developers" },
-  { displayName: "Aliffia Permata Sakarosa", jobTitle: "IT Data Analyst" },
-  { displayName: "Carmudi", jobTitle: "Software Developers" },
-  { displayName: "Eko Fajar Putra", jobTitle: "Software Developers" },
-  { displayName: "Daniel Henry", jobTitle: "Software Developers" },
-  { displayName: "Meidiana Monica", jobTitle: "Software Developers" },
-  { displayName: "Marsha Nayla Zulkarnain", jobTitle: "BRANDING & ACQUISITION OFFICER" },
-  { displayName: "Alya Natasha Andriani", jobTitle: "BRANDING & ACQUISITION OFFICER" },
-  { displayName: "Wresni Wahyu Widodo", jobTitle: "SOFTWARE DEVELOPERS" },
-  { displayName: "I Putu Wisnuadi Prabawa Bukian", jobTitle: "Software Developers" },
-  { displayName: "Alvin Lander", jobTitle: "Software Developers" },
-  { displayName: "Hollyana Puteri Haryono", jobTitle: "IT DATA ANALYST" },
-  { displayName: "M Sidik Augi Rahmat", jobTitle: "Software Developers" },
-  { displayName: "Thariq Alfa Benriska", jobTitle: "SOFTWARE DEVELOPERS" },
-  { displayName: "Muhammad Husein", jobTitle: "Software Developers" },
-  { displayName: "Hendy Arin Wijaya", jobTitle: "PRODUCT MARKETING: CONTENT SPECIALIST" },
-  { displayName: "Aldyaz Gusti Nugroho", jobTitle: "ANDROID DEVELOPER" },
-  { displayName: "Kadek Wikananda Laksmana Priambada", jobTitle: "UI/UX Designer" },
-  { displayName: "Adrianto Prasetyo", jobTitle: "FULLSTACK DEVELOPER" },
-  { displayName: "Haris Saputra", jobTitle: "Fullstack Developer" },
-  { displayName: "Tia Sarwoedhi Pratama", jobTitle: "ANDROID DEVELOPER" },
-  { displayName: "Adam Afgani", jobTitle: "Business Analyst" },
-  { displayName: "Ibnu Bagus Syahputra", jobTitle: "PROJECT MANAGER / SCRUM MASTER" },
-  { displayName: "Fatah Fadhlurrohman", jobTitle: "ANDROID DEVELOPER" },
-  { displayName: "Ariyanto Sani", jobTitle: "IOS DEVELOPER" },
-  { displayName: "Valerian Mahdi Pratama", jobTitle: "IT Data Engineer" },
-  { displayName: "Ario Hardi Wibowo", jobTitle: "Project Manager" },
-  { displayName: "Davin Suteja", jobTitle: "Digital Product Manager" },
-  { displayName: "Made Arbi Parameswara", jobTitle: "Data Engineer" },
-  { displayName: "Rahmah Nur Rizki", jobTitle: "Data Analyst" },
-  { displayName: "Rio Arjuna", jobTitle: "ANDROID DEVELOPER" },
-  { displayName: "Rivaldo Fernandes", jobTitle: "IOS DEVELOPER" },
+  "Wahyudi",
+  "Silvia Phungky",
+  "Aditya Brahmayoga",
+  "Mira Iskarnita A",
+  "Reno Rizdano",
+  "Fadilla Tourizqua Zain",
+  "Teguh Riyanto",
+  "Karina Nuzul Fitria",
+  "Anis Ferisa Nurlistiani",
+  "Yesty Desca Refita Putri",
+  "Widya Sitaresmi",
+  "Rafli Putra",
+  "Ilyyas Sukmadjarna",
+  "Joshua Pohan",
+  "Muhammad Yuka Langbuana",
+  "Rizky Muhammad Reza",
+  "Muhammad Revy Saladdin",
+  "Said Muhammad Yahya",
+  "Ruth Marlina Hutabarat",
+  "Hendra Nugraha",
+  "Ayodhia Tri Harmanto",
+  "Marsel Widjaja",
+  "Ari Arsadi",
+  "Irfan Asidiq",
+  "Handik Yuwono",
+  "Michael Sotaronggal Manurung",
+  "Rezha Satria",
+  "Ivan Julius Liefrance",
+  "Yulia Melda",
+  "Poppy Buana Mega Putri",
+  "Muhammad Ahadian Razzaq",
+  "Paramita Sari",
+  "Rheco Paradhika Kusuma",
+  "Rifqi Dika Hamana",
+  "Gagah Kharismanuary",
+  "Andi Danca Prima Raharja",
+  "Achmad Fauzi",
+  "Hakki Haromain",
+  "Aditya Fabio Hariawan",
+  "Hendra Pria Utama",
+  "Alfina Megasiwi",
+  "Rafli Hidayat",
+  "Nur Choirudin",
+  "Muhammad Noor",
+  "Sri Wahyuni",
+  "Muhammad Afifuddin Al Rasyid",
+  "Aliffia Permata Sakarosa",
+  "Carmudi",
+  "Eko Fajar Putra",
+  "Daniel Henry",
+  "Meidiana Monica",
+  "Marsha Nayla Zulkarnain",
+  "Alya Natasha Andriani",
+  "Wresni Wahyu Widodo",
+  "I Putu Wisnuadi Prabawa Bukian",
+  "Alvin Lander",
+  "Hollyana Puteri Haryono",
+  "M Sidik Augi Rahmat",
+  "Thariq Alfa Benriska",
+  "Muhammad Husein",
+  "Hendy Arin Wijaya",
+  "Aldyaz Gusti Nugroho",
+  "Kadek Wikananda Laksmana Priambada",
+  "Adrianto Prasetyo",
+  "Haris Saputra",
+  "Tia Sarwoedhi Pratama",
+  "Adam Afgani",
+  "Ibnu Bagus Syahputra",
+  "Fatah Fadhlurrohman",
+  "Ariyanto Sani",
+  "Valerian Mahdi Pratama",
+  "Ario Hardi Wibowo",
+  "Davin Suteja",
+  "Made Arbi Parameswara",
+  "Rahmah Nur Rizki",
+  "Rio Arjuna",
+  "Rivaldo Fernandes",
 ]
 
 const generateDeviceId = () => {
@@ -125,7 +125,7 @@ const formatCurrentTime = () => {
 
 export default function WarYuhuUser() {
   const [queue, setQueue] = useState([])
-  const [selectedUser, setSelectedUser] = useState(null)
+  const [name, setName] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [lastTicket, setLastTicket] = useState(null)
   const [error, setError] = useState("")
@@ -170,8 +170,8 @@ export default function WarYuhuUser() {
     return queue.some((entry) => entry.deviceId === deviceId)
   }
 
-  const hasNameRegistered = (displayName) => {
-    return queue.some((entry) => entry.displayName === displayName)
+  const hasNameRegistered = (name) => {
+    return queue.some((entry) => entry.displayName === name || entry.name === name)
   }
 
   const getMyTicket = () => {
@@ -193,7 +193,7 @@ export default function WarYuhuUser() {
       return
     }
 
-    if (!selectedUser) {
+    if (!name.trim()) {
       setError("Pilih nama dari daftar!")
       return
     }
@@ -203,8 +203,8 @@ export default function WarYuhuUser() {
       return
     }
 
-    if (hasNameRegistered(selectedUser.displayName)) {
-      setError(`${selectedUser.displayName} udah ada yang ambil! Pilih nama lain.`)
+    if (hasNameRegistered(name)) {
+      setError(`${name} udah ada yang ambil! Pilih nama lain.`)
       return
     }
 
@@ -213,8 +213,7 @@ export default function WarYuhuUser() {
       const ticketNumber = getNextTicketNumber()
       const entry = {
         ticket: ticketNumber,
-        displayName: selectedUser.displayName,
-        jobTitle: selectedUser.jobTitle,
+        displayName: name.trim(),
         timestamp: new Date().toISOString(),
         deviceId: deviceId,
       }
@@ -223,7 +222,7 @@ export default function WarYuhuUser() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
       setQueue(updated)
       setLastTicket(entry)
-      setSelectedUser(null)
+      setName("")
     } catch (err) {
       setError("Gagal daftar, coba lagi ya!")
       console.error(err)
@@ -241,7 +240,7 @@ export default function WarYuhuUser() {
     })
   }
 
-  const availableNames = WHITELISTED_USERS.filter((u) => !hasNameRegistered(u.displayName))
+  const availableNames = WHITELISTED_USERS.filter((n) => !hasNameRegistered(n))
 
   return (
     <div
@@ -334,18 +333,15 @@ export default function WarYuhuUser() {
                       &gt; Pilih Nama
                     </label>
                     <select
-                      value={selectedUser ? selectedUser.displayName : ""}
-                      onChange={(e) => {
-                        const user = WHITELISTED_USERS.find((u) => u.displayName === e.target.value)
-                        setSelectedUser(user || null)
-                      }}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       disabled={!canRegister}
                       className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">-- Pilih nama lo --</option>
-                      {availableNames.map((u) => (
-                        <option key={u.displayName} value={u.displayName}>
-                          {u.displayName} ({u.jobTitle})
+                      {availableNames.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
                         </option>
                       ))}
                     </select>
@@ -364,7 +360,7 @@ export default function WarYuhuUser() {
 
                   <button
                     onClick={handleSubmit}
-                    disabled={submitting || !canRegister || !selectedUser}
+                    disabled={submitting || !canRegister || !name.trim()}
                     className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-yellow-500 hover:to-red-600 text-black font-black uppercase tracking-[0.25em] py-4 text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500 hover:border-yellow-400 shadow-lg shadow-red-900/50"
                   >
                     {submitting ? "▸ PROSES..." : "▸ AMBIL TIKET"}
@@ -391,9 +387,8 @@ export default function WarYuhuUser() {
                       #{String(lastTicket.ticket).padStart(3, "0")}
                     </span>
                   </div>
-                  <div className="text-red-200 text-sm mt-2">{lastTicket.displayName}</div>
-                  <div className="text-red-400/60 text-xs mt-1 uppercase tracking-widest">
-                    {lastTicket.jobTitle}
+                  <div className="text-red-200 text-sm mt-2">
+                    {lastTicket.displayName || lastTicket.name}
                   </div>
                 </div>
               )}

@@ -125,13 +125,13 @@ export default function WarYuhuAdmin() {
           </div>
           <div className="border border-red-900/40 bg-black/40 p-4">
             <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-              Device ID Unik
+              Max Slot
             </div>
             <div
               className="text-3xl font-black text-yellow-500"
               style={{ fontFamily: "'Bebas Neue', sans-serif" }}
             >
-              {String(new Set(queue.map((q) => q.deviceId)).size).padStart(2, "0")}
+              {String(79 - queue.length).padStart(2, "0")}
             </div>
           </div>
         </div>
@@ -205,7 +205,6 @@ export default function WarYuhuAdmin() {
                     <div className="text-red-100 font-bold truncate">
                       {entry.displayName || entry.name}
                     </div>
-                    <div className="text-red-500/70 text-xs truncate">{entry.jobTitle || ""}</div>
                   </div>
 
                   <div className="text-red-600/60 text-[10px] uppercase tracking-widest tabular-nums hidden sm:block">

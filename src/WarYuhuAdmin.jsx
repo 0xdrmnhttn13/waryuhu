@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from "react"
-import { Swords, Users, Trophy, RefreshCw, Flame, LogOut, Shield, Trash2 } from "lucide-react"
+import {
+  Swords,
+  Users,
+  Trophy,
+  RefreshCw,
+  Flame,
+  LogOut,
+  Shield,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Crown,
+} from "lucide-react"
+import { supabase } from "./supabaseClient"
 
-const STORAGE_KEY = "waryuhu:queue"
-const COUNTER_KEY = "waryuhu:counter"
+const MAX_QUEUE_SIZE = 10
 
 export default function WarYuhuAdmin() {
   const [queue, setQueue] = useState([])
@@ -14,11 +26,15 @@ export default function WarYuhuAdmin() {
       return
     }
     loadQueue()
-    const onStorage = (e) => {
-      if (e.key === STORAGE_KEY) loadQueue()
+    const channel = supabase
+      .channel("queue-changes-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => {
+        loadQueue()
+      })
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
     }
-    window.addEventListener("storage", onStorage)
-    return () => window.removeEventListener("storage", onStorage)
   }, [])
 
   const handleLogout = () => {
@@ -26,20 +42,70 @@ export default function WarYuhuAdmin() {
     window.location.hash = "#/"
   }
 
-  const loadQueue = () => {
+  const loadQueue = async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      setQueue(raw ? JSON.parse(raw) : [])
+      const { data, error } = await supabase
+        .from("queue")
+        .select("*")
+        .order("ticket", { ascending: true })
+
+      if (error) throw error
+      setQueue(data || [])
     } catch {
       setQueue([])
     }
   }
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!confirm("Yakin mau reset semua antrian? Data bakal ilang permanen.")) return
-    localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem(COUNTER_KEY)
-    setQueue([])
+    try {
+      await supabase.from("queue").delete().neq("ticket", 0)
+      setQueue([])
+    } catch {
+      localStorage.removeItem("waryuhu:queue")
+      setQueue([])
+    }
+  }
+
+  const handleMoveUp = async (entry) => {
+    const idx = queue.findIndex((e) => e.ticket === entry.ticket)
+    if (idx <= 0) return
+
+    const prevEntry = queue[idx - 1]
+
+    try {
+      await supabase.from("queue").update({ ticket: prevEntry.ticket }).eq("ticket", entry.ticket)
+      await supabase.from("queue").update({ ticket: entry.ticket }).eq("ticket", prevEntry.ticket)
+      await loadQueue()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleMoveDown = async (entry) => {
+    const idx = queue.findIndex((e) => e.ticket === entry.ticket)
+    if (idx >= queue.length - 1) return
+
+    const nextEntry = queue[idx + 1]
+
+    try {
+      await supabase.from("queue").update({ ticket: nextEntry.ticket }).eq("ticket", entry.ticket)
+      await supabase.from("queue").update({ ticket: entry.ticket }).eq("ticket", nextEntry.ticket)
+      await loadQueue()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleRemove = async (entry) => {
+    if (!confirm(`Yakin mau hapus ${entry.displayName || entry.name}?`)) return
+
+    try {
+      await supabase.from("queue").delete().eq("ticket", entry.ticket)
+      await loadQueue()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const formatTime = (iso) => {
@@ -107,7 +173,9 @@ export default function WarYuhuAdmin() {
               <Flame className="w-3 h-3" /> Live Queue
             </span>
             <span>•</span>
-            <span>{queue.length} prajurit terdaftar</span>
+            <span>
+              {queue.length}/{MAX_QUEUE_SIZE} prajurit terdaftar
+            </span>
           </div>
         </div>
 
@@ -125,13 +193,13 @@ export default function WarYuhuAdmin() {
           </div>
           <div className="border border-red-900/40 bg-black/40 p-4">
             <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-              Max Slot
+              Slot Tersisa
             </div>
             <div
-              className="text-3xl font-black text-yellow-500"
+              className={`text-3xl font-black ${MAX_QUEUE_SIZE - queue.length <= 2 ? "text-red-500" : "text-yellow-500"}`}
               style={{ fontFamily: "'Bebas Neue', sans-serif" }}
             >
-              {String(79 - queue.length).padStart(2, "0")}
+              {String(MAX_QUEUE_SIZE - queue.length).padStart(2, "0")}
             </div>
           </div>
         </div>
@@ -173,47 +241,87 @@ export default function WarYuhuAdmin() {
             </div>
           ) : (
             <div className="max-h-[600px] overflow-y-auto">
-              {queue.map((entry, idx) => (
-                <div
-                  key={entry.ticket}
-                  className={`flex items-center gap-4 px-5 py-4 border-b border-red-900/20 hover:bg-red-950/20 transition-colors ${
-                    idx === 0 ? "bg-gradient-to-r from-yellow-500/10 to-transparent" : ""
-                  }`}
-                >
-                  <div className="w-10 text-center">
-                    {idx === 0 ? (
-                      <Trophy className="w-5 h-5 text-yellow-500 mx-auto" />
-                    ) : (
-                      <span className="text-red-600/60 text-xs font-bold">
-                        {String(idx + 1).padStart(2, "0")}
-                      </span>
-                    )}
-                  </div>
+              {queue.map((entry, idx) => {
+                const isWahyudi =
+                  entry.displayName?.toLowerCase() === "wahyudi" ||
+                  entry.name?.toLowerCase() === "wahyudi"
+                return (
+                  <div
+                    key={entry.ticket}
+                    className={`flex items-center gap-2 px-5 py-4 border-b border-red-900/20 hover:bg-red-950/20 transition-colors ${
+                      idx === 0 ? "bg-gradient-to-r from-yellow-500/10 to-transparent" : ""
+                    }`}
+                  >
+                    <div className="w-8 text-center">
+                      {idx === 0 ? (
+                        isWahyudi ? (
+                          <Crown className="w-5 h-5 text-yellow-500 mx-auto" />
+                        ) : (
+                          <Trophy className="w-5 h-5 text-yellow-500 mx-auto" />
+                        )
+                      ) : (
+                        <span className="text-red-600/60 text-xs font-bold">
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="min-w-[80px]">
-                    <div
-                      className={`text-2xl font-black leading-none ${
-                        idx === 0 ? "text-yellow-400" : "text-red-400"
-                      }`}
-                      style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                    >
-                      #{String(entry.ticket).padStart(3, "0")}
+                    <div className="min-w-[60px]">
+                      <div
+                        className={`text-xl font-black leading-none ${
+                          idx === 0 ? "text-yellow-400" : "text-red-400"
+                        }`}
+                        style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+                      >
+                        #{String(entry.ticket).padStart(3, "0")}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-red-100 font-bold truncate">
+                        {entry.displayName || entry.name}
+                        {isWahyudi && <span className="text-yellow-500 text-xs ml-2">(VIP)</span>}
+                      </div>
+                    </div>
+
+                    <div className="text-red-600/60 text-[10px] uppercase tracking-widest tabular-nums hidden sm:block">
+                      {formatTime(entry.timestamp)}
+                    </div>
+
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleMoveUp(entry)}
+                        disabled={idx === 0}
+                        className="text-red-400/70 hover:text-yellow-500 disabled:opacity-30 disabled:cursor-not-allowed p-1"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveDown(entry)}
+                        disabled={idx === queue.length - 1}
+                        className="text-red-400/70 hover:text-yellow-500 disabled:opacity-30 disabled:cursor-not-allowed p-1"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleRemove(entry)}
+                        className="text-red-400/70 hover:text-red-500 p-1"
+                        title="Remove"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="text-red-100 font-bold truncate">
-                      {entry.displayName || entry.name}
-                    </div>
-                  </div>
-
-                  <div className="text-red-600/60 text-[10px] uppercase tracking-widest tabular-nums hidden sm:block">
-                    {formatTime(entry.timestamp)}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
+        </div>
+
+        <div className="mt-4 text-center text-red-500/60 text-xs uppercase tracking-widest">
+          * Admin dapat mengatur urutan queue dengan tombol ↑ ↓
         </div>
       </div>
 

@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from "react"
-import { Swords, Ticket, Users, Trophy, RefreshCw, Flame, Zap, Ban, Clock } from "lucide-react"
+import {
+  Swords,
+  Ticket,
+  Users,
+  Trophy,
+  RefreshCw,
+  Flame,
+  Zap,
+  Ban,
+  Clock,
+  Search,
+} from "lucide-react"
+import { supabase } from "./supabaseClient"
 
 const STORAGE_KEY = "waryuhu:queue"
 const COUNTER_KEY = "waryuhu:counter"
 const DEVICE_ID_KEY = "waryuhu:deviceId"
+const MAX_QUEUE_SIZE = 10
 
 const WHITELISTED_USERS = [
   "Wahyudi",
@@ -126,6 +139,7 @@ const formatCurrentTime = () => {
 export default function WarYuhuUser() {
   const [queue, setQueue] = useState([])
   const [name, setName] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [lastTicket, setLastTicket] = useState(null)
   const [error, setError] = useState("")
@@ -135,11 +149,15 @@ export default function WarYuhuUser() {
 
   useEffect(() => {
     loadQueue()
-    const onStorage = (e) => {
-      if (e.key === STORAGE_KEY) loadQueue()
+    const channel = supabase
+      .channel("queue-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => {
+        loadQueue()
+      })
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
     }
-    window.addEventListener("storage", onStorage)
-    return () => window.removeEventListener("storage", onStorage)
   }, [])
 
   useEffect(() => {
@@ -150,20 +168,27 @@ export default function WarYuhuUser() {
     return () => clearInterval(timer)
   }, [])
 
-  const loadQueue = () => {
+  const loadQueue = async () => {
     try {
+      const { data, error } = await supabase
+        .from("queue")
+        .select("*")
+        .order("ticket", { ascending: true })
+
+      if (error) {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        setQueue(raw ? JSON.parse(raw) : [])
+        return
+      }
+      setQueue(data || [])
+    } catch {
       const raw = localStorage.getItem(STORAGE_KEY)
       setQueue(raw ? JSON.parse(raw) : [])
-    } catch {
-      setQueue([])
     }
   }
 
   const getNextTicketNumber = () => {
-    const current = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10)
-    const next = current + 1
-    localStorage.setItem(COUNTER_KEY, String(next))
-    return next
+    return queue.length + 1
   }
 
   const hasDeviceRegistered = () => {
@@ -185,8 +210,13 @@ export default function WarYuhuUser() {
     }
   }, [queue])
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("")
+
+    if (queue.length >= MAX_QUEUE_SIZE) {
+      setError("Queue penuh! Maksimal 10 orang.")
+      return
+    }
 
     if (!canRegister) {
       setError("Pendaftaran hanya bisa jam 17:00!")
@@ -210,19 +240,52 @@ export default function WarYuhuUser() {
 
     setSubmitting(true)
     try {
-      const ticketNumber = getNextTicketNumber()
+      const isWahyudi = name.trim().toLowerCase() === "wahyudi"
+      let ticketNumber
+
+      if (isWahyudi) {
+        const wahyudiExists = queue.some(
+          (e) => e.displayName?.toLowerCase() === "wahyudi" || e.name?.toLowerCase() === "wahyudi"
+        )
+        if (wahyudiExists) {
+          setError("Wahyudi udah ada di queue!")
+          setSubmitting(false)
+          return
+        }
+        ticketNumber = 1
+
+        const { error: updateError } = await supabase
+          .from("queue")
+          .update({ ticket: queue.length + 1 })
+          .gte("ticket", 1)
+
+        if (updateError) {
+          console.error("Error updating tickets:", updateError)
+        }
+      } else {
+        ticketNumber = getNextTicketNumber()
+      }
+
       const entry = {
         ticket: ticketNumber,
         displayName: name.trim(),
         timestamp: new Date().toISOString(),
         deviceId: deviceId,
+        priority: isWahyudi ? 1 : 0,
       }
 
-      const updated = [...queue, entry]
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-      setQueue(updated)
+      const { error: insertError } = await supabase.from("queue").insert([entry])
+
+      if (insertError) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...queue, entry]))
+        setQueue([...queue, entry])
+      } else {
+        await loadQueue()
+      }
+
       setLastTicket(entry)
       setName("")
+      setSearchQuery("")
     } catch (err) {
       setError("Gagal daftar, coba lagi ya!")
       console.error(err)
@@ -240,7 +303,13 @@ export default function WarYuhuUser() {
     })
   }
 
-  const availableNames = WHITELISTED_USERS.filter((n) => !hasNameRegistered(n))
+  const availableNames = WHITELISTED_USERS.filter(
+    (n) =>
+      !hasNameRegistered(n) &&
+      (searchQuery === "" || n.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
+
+  const isQueueFull = queue.length >= MAX_QUEUE_SIZE
 
   return (
     <div
@@ -285,13 +354,24 @@ export default function WarYuhuUser() {
               <Flame className="w-3 h-3" /> Live Queue
             </span>
             <span>•</span>
-            <span>{queue.length} prajurit terdaftar</span>
+            <span>
+              {queue.length}/{MAX_QUEUE_SIZE} prajurit terdaftar
+            </span>
             <span>•</span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" /> {currentTime}
             </span>
           </div>
         </div>
+
+        {isQueueFull && !hasDeviceRegistered() && (
+          <div className="mb-6 text-center border-2 border-red-600 bg-red-950/40 py-4">
+            <Ban className="w-8 h-8 text-red-500 mx-auto mb-2" />
+            <div className="text-red-400 text-sm uppercase tracking-widest">
+              Queue Penuh! ({MAX_QUEUE_SIZE} orang)
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-2">
@@ -330,12 +410,29 @@ export default function WarYuhuUser() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-red-300/80 text-xs uppercase tracking-widest mb-2">
-                      &gt; Pilih Nama
+                      &gt; Cari Nama
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-600/50" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search nama..."
+                        disabled={!canRegister || isQueueFull}
+                        className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 pl-10 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-red-800/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-red-300/80 text-xs uppercase tracking-widest mb-2">
+                      &gt; Pilih Nama ({availableNames.length} tersedia)
                     </label>
                     <select
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      disabled={!canRegister}
+                      disabled={!canRegister || isQueueFull}
                       className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">-- Pilih nama lo --</option>
@@ -345,7 +442,7 @@ export default function WarYuhuUser() {
                         </option>
                       ))}
                     </select>
-                    {availableNames.length === 0 && canRegister && (
+                    {availableNames.length === 0 && canRegister && !isQueueFull && (
                       <div className="text-red-500 text-xs mt-2 uppercase tracking-widest">
                         Semua nama udah diambil!
                       </div>
@@ -360,7 +457,7 @@ export default function WarYuhuUser() {
 
                   <button
                     onClick={handleSubmit}
-                    disabled={submitting || !canRegister || !name.trim()}
+                    disabled={submitting || !canRegister || !name.trim() || isQueueFull}
                     className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-yellow-500 hover:to-red-600 text-black font-black uppercase tracking-[0.25em] py-4 text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500 hover:border-yellow-400 shadow-lg shadow-red-900/50"
                   >
                     {submitting ? "▸ PROSES..." : "▸ AMBIL TIKET"}
@@ -408,13 +505,13 @@ export default function WarYuhuUser() {
               </div>
               <div className="border border-red-900/40 bg-black/40 p-4">
                 <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-                  Tersedia
+                  Slot Tersisa
                 </div>
                 <div
-                  className="text-3xl font-black text-yellow-500"
+                  className={`text-3xl font-black ${MAX_QUEUE_SIZE - queue.length <= 2 ? "text-red-500" : "text-yellow-500"}`}
                   style={{ fontFamily: "'Bebas Neue', sans-serif" }}
                 >
-                  {String(availableNames.length).padStart(2, "0")}
+                  {String(MAX_QUEUE_SIZE - queue.length).padStart(2, "0")}
                 </div>
               </div>
             </div>

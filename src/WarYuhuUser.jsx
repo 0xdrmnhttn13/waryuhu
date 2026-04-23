@@ -310,6 +310,7 @@ export default function WarYuhuUser() {
 
       const entry = {
         ticket: ticketNumber,
+        name: name.trim(),
         displayName: name.trim(),
         timestamp: new Date().toISOString(),
         deviceId: deviceId,
@@ -319,8 +320,10 @@ export default function WarYuhuUser() {
       const { error: insertError } = await supabase.from("queue").insert([entry])
 
       if (insertError) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([...queue, entry]))
-        setQueue([...queue, entry])
+        console.error("Insert error:", insertError)
+        setError(`DB Error: ${insertError.message}`)
+        setSubmitting(false)
+        return
       } else {
         await loadQueue()
       }

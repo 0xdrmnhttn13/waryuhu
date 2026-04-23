@@ -101,13 +101,13 @@ export default function WarYuhuAdmin() {
 
   const handleReset = async () => {
     if (!confirm("Yakin mau reset semua antrian? Data bakal ilang permanen.")) return
-    try {
-      await supabase.from("queue").delete().neq("ticket", 0)
-      setQueue([])
-    } catch {
-      localStorage.removeItem("waryuhu:queue")
-      setQueue([])
+    const { error } = await supabase.from("queue").delete().gte("ticket", 0)
+    if (error) {
+      alert("Gagal reset: " + error.message)
+      return
     }
+    localStorage.removeItem("waryuhu:queue")
+    setQueue([])
   }
 
   const handleMoveUp = async (entry) => {

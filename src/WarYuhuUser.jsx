@@ -113,8 +113,12 @@ export default function WarYuhuUser() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [successTicketNumber, setSuccessTicketNumber] = useState(null)
   const [isDark, setIsDark] = useState(true)
+  const [showPopup, setShowPopup] = useState(true)
+  const [popupTime, setPopupTime] = useState({ h: 0, m: 0, s: 0, ms: 0 })
+  const [within5min, setWithin5min] = useState(false)
   const inputRef = useRef(null)
   const audioRef = useRef(null)
+  const rafRef = useRef(null)
 
   const th = isDark ? DARK : LIGHT
 
@@ -153,6 +157,34 @@ export default function WarYuhuUser() {
     const timer = setInterval(check, 1000)
     return () => clearInterval(timer)
   }, [openHour])
+
+  // RAF-based millisecond countdown for popup
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date()
+      const target = new Date()
+      target.setHours(openHour, 0, 0, 0)
+      if (now >= target) {
+        setShowPopup(false)
+        return
+      }
+      const diff = target - now
+      setPopupTime({
+        h: Math.floor(diff / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+        ms: diff % 1000,
+      })
+      setWithin5min(diff <= 15 * 60 * 1000)
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    if (!canRegister && showPopup) {
+      rafRef.current = requestAnimationFrame(tick)
+    } else if (canRegister) {
+      setShowPopup(false)
+    }
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [openHour, canRegister, showPopup])
 
   const loadSettings = async () => {
     try {
@@ -243,6 +275,108 @@ export default function WarYuhuUser() {
         opacity: isDark ? 0.22 : 0.14,
         animation: "bgRotatePulse 8s ease-in-out infinite",
       }} />
+
+      {/* Countdown Popup */}
+      {showPopup && !canRegister && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 2000,
+          background: within5min ? "#0D2B0D" : "#4A0000",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: "24px", overflow: "hidden",
+        }}>
+          {/* BG image juga di popup */}
+          <div style={{
+            position: "absolute", pointerEvents: "none",
+            width: "200vmax", height: "200vmax", top: "50%", left: "50%",
+            backgroundImage: "url('https://img.harianjogja.com/posts/2025/12/02/1237730/mbg2.jpg')",
+            backgroundSize: "cover", backgroundPosition: "center",
+            opacity: isDark ? 0.07 : 0.06,
+            animation: "bgRotatePulse 8s ease-in-out infinite",
+          }} />
+
+          <div style={{ position: "relative", textAlign: "center", width: "100%", maxWidth: "800px" }}>
+
+            {/* Label */}
+            <div style={{ fontSize: "11px", fontWeight: "700", color: th.t5, textTransform: "uppercase", letterSpacing: "4px", marginBottom: "12px" }}>
+              War<span style={{ color: "#F26A21" }}>YUHUUU</span> · Pembukaan Pendaftaran Dalam
+            </div>
+
+            {/* Jam buka */}
+            <div style={{ fontSize: "13px", color: "#1CABE2", fontWeight: "600", marginBottom: "40px", letterSpacing: "1px" }}>
+              Dibuka pukul {String(openHour).padStart(2, "0")}:00:00
+            </div>
+
+            {/* Big countdown */}
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0", marginBottom: "64px", flexWrap: "wrap" }}>
+              {[
+                { value: popupTime.h, label: "Jam", size: "96px" },
+                { sep: ":" },
+                { value: popupTime.m, label: "Menit", size: "96px" },
+                { sep: ":" },
+                { value: popupTime.s, label: "Detik", size: "96px" },
+                { sep: "." },
+                { value: popupTime.ms, label: "Ms", size: "52px", isMs: true },
+              ].map((unit, i) => (
+                unit.sep ? (
+                  <div key={i} style={{
+                    fontSize: unit.sep === "." ? "52px" : "80px",
+                    fontWeight: "900", color: "#F26A21",
+                    lineHeight: 1, paddingBottom: unit.sep === "." ? "18px" : "20px",
+                    margin: "0 2px", fontFamily: "monospace",
+                  }}>{unit.sep}</div>
+                ) : (
+                  <div key={i} style={{ textAlign: "center", minWidth: unit.isMs ? "80px" : "130px" }}>
+                    <div style={{
+                      fontSize: unit.size, fontWeight: "900", fontFamily: "monospace",
+                      lineHeight: 1,
+                      background: unit.isMs
+                        ? "none"
+                        : "linear-gradient(180deg, #F26A21 0%, #1CABE2 100%)",
+                      WebkitBackgroundClip: unit.isMs ? "unset" : "text",
+                      WebkitTextFillColor: unit.isMs ? "#F26A21" : "transparent",
+                      color: unit.isMs ? "#F26A21" : undefined,
+                    }}>
+                      {String(unit.value).padStart(unit.isMs ? 3 : 2, "0")}
+                    </div>
+                    <div style={{ fontSize: "10px", color: th.t5, textTransform: "uppercase", letterSpacing: "2px", marginTop: "6px" }}>
+                      {unit.label}
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+
+            {/* Button */}
+            <div>
+              <button
+                onClick={() => within5min && setShowPopup(false)}
+                disabled={!within5min}
+                style={{
+                  padding: "18px 56px",
+                  background: within5min
+                    ? "linear-gradient(135deg, #F26A21, #E85D0E)"
+                    : th.card2,
+                  border: `2px solid ${within5min ? "#F26A21" : th.border}`,
+                  borderRadius: "16px",
+                  color: within5min ? "white" : th.t5,
+                  fontWeight: "800", fontSize: "18px",
+                  cursor: within5min ? "pointer" : "not-allowed",
+                  letterSpacing: "0.3px",
+                  boxShadow: within5min ? "0 8px 32px rgba(242,106,33,0.45)" : "none",
+                  transition: "all 0.3s",
+                }}
+              >
+                🍱 aku mau daftar YUHUUU
+              </button>
+              <div style={{ fontSize: "12px", color: within5min ? th.green : th.t5, marginTop: "14px", fontWeight: "600" }}>
+                {within5min
+                  ? "✓ Pendaftaran hampir dibuka — silakan masuk!"
+                  : `Kamu bisa daftar YUHUUU 15 menit sebelum jam ${String(openHour).padStart(2, "0")}:00`}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Success Modal */}
       {showSuccessModal && (

@@ -152,6 +152,9 @@ export default function WarYuhuUser() {
       .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => {
         loadQueue()
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => {
+        loadSettings()
+      })
       .subscribe()
     return () => {
       supabase.removeChannel(channel)

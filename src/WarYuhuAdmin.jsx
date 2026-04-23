@@ -72,7 +72,7 @@ export default function WarYuhuAdmin() {
     try {
       await supabase
         .from("settings")
-        .upsert({ key: "queue_open_hour", value: String(hour) })
+        .upsert({ key: "queue_open_hour", value: String(hour) }, { onConflict: "key" })
       setOpenHour(hour)
       setTimeSaved(true)
       setTimeout(() => setTimeSaved(false), 2000)

@@ -230,11 +230,6 @@ export default function WarYuhuUser() {
   const handleSubmit = async () => {
     setError("")
 
-    if (queue.length >= MAX_QUEUE_SIZE) {
-      setError("Queue penuh! Maksimal 10 orang.")
-      return
-    }
-
     if (!canRegister) {
       setError(`Pendaftaran hanya bisa jam ${String(openHour).padStart(2, "0")}:00!`)
       return
@@ -250,23 +245,46 @@ export default function WarYuhuUser() {
       return
     }
 
-    if (hasDeviceRegistered()) {
-      setError("Lo udah daftar! Satu device cuma bisa ambil satu tiket.")
-      return
-    }
-
-    if (hasNameRegistered(name)) {
-      setError(`${name} udah ada yang ambil! Pilih nama lain.`)
-      return
-    }
-
     setSubmitting(true)
     try {
+      // Fresh check dari DB sebelum insert
+      const { data: freshQueue, error: fetchError } = await supabase
+        .from("queue")
+        .select("*")
+        .order("ticket", { ascending: true })
+
+      if (fetchError) {
+        setError("Gagal cek antrian, coba lagi!")
+        setSubmitting(false)
+        return
+      }
+
+      if (freshQueue.length >= MAX_QUEUE_SIZE) {
+        setError("Queue penuh! Maksimal 10 orang.")
+        await loadQueue()
+        setSubmitting(false)
+        return
+      }
+
+      if (freshQueue.some((e) => e.deviceId === deviceId)) {
+        setError("Lo udah daftar! Satu device cuma bisa ambil satu tiket.")
+        await loadQueue()
+        setSubmitting(false)
+        return
+      }
+
+      if (freshQueue.some((e) => e.displayName === name.trim() || e.name === name.trim())) {
+        setError(`${name} udah ada yang ambil! Pilih nama lain.`)
+        await loadQueue()
+        setSubmitting(false)
+        return
+      }
+
       const isWahyudi = name.trim().toLowerCase() === "wahyudi"
       let ticketNumber
 
       if (isWahyudi) {
-        const wahyudiExists = queue.some(
+        const wahyudiExists = freshQueue.some(
           (e) => e.displayName?.toLowerCase() === "wahyudi" || e.name?.toLowerCase() === "wahyudi"
         )
         if (wahyudiExists) {
@@ -278,14 +296,14 @@ export default function WarYuhuUser() {
 
         const { error: updateError } = await supabase
           .from("queue")
-          .update({ ticket: queue.length + 1 })
+          .update({ ticket: freshQueue.length + 1 })
           .gte("ticket", 1)
 
         if (updateError) {
           console.error("Error updating tickets:", updateError)
         }
       } else {
-        ticketNumber = getNextTicketNumber()
+        ticketNumber = freshQueue.length + 1
       }
 
       const entry = {
@@ -496,7 +514,7 @@ export default function WarYuhuUser() {
                     disabled={submitting || !canRegister || !name.trim() || isQueueFull}
                     className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-yellow-500 hover:to-red-600 text-black font-black uppercase tracking-[0.25em] py-4 text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500 hover:border-yellow-400 shadow-lg shadow-red-900/50"
                   >
-                    {submitting ? "▸ PROSES..." : "▸ AMBIL TIKET"}
+                    {submitting ? "▸ PROSES..." : "▸ ANTRI YUHU"}
                   </button>
                 </div>
               )}
@@ -559,7 +577,7 @@ export default function WarYuhuUser() {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-red-400" />
                   <h2 className="text-red-300 uppercase tracking-[0.25em] text-xs font-bold">
-                    Garis Depan
+                    Antrian Yuhu
                   </h2>
                 </div>
                 <button
@@ -575,7 +593,7 @@ export default function WarYuhuUser() {
                 <div className="p-12 text-center">
                   <Trophy className="w-12 h-12 text-red-900 mx-auto mb-3" strokeWidth={1} />
                   <div className="text-red-500/60 uppercase tracking-widest text-xs">
-                    Belum ada yang war
+                    Belum ada yang antri
                   </div>
                   <div className="text-red-800 text-xs mt-2">Jadilah yang pertama!</div>
                 </div>

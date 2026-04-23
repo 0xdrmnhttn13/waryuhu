@@ -123,8 +123,10 @@ const getCountdown = (hour) => {
   const now = new Date()
   const target = new Date()
   target.setHours(hour, 0, 0, 0)
-  if (now >= target) target.setDate(target.getDate() + 1)
+  // Kalau sudah lewat jam buka hari ini, hitung ke besok
+  if (now.getHours() < hour && now >= target) target.setDate(target.getDate() + 1)
   const diff = target - now
+  if (diff <= 0) return "00:00:00"
   const h = Math.floor(diff / 3600000)
   const m = Math.floor((diff % 3600000) / 60000)
   const s = Math.floor((diff % 60000) / 1000)
@@ -163,7 +165,7 @@ export default function WarYuhuUser() {
 
   useEffect(() => {
     const check = () => {
-      const isOpen = new Date().getHours() === openHour
+      const isOpen = new Date().getHours() >= openHour
       setCanRegister(isOpen)
       if (!isOpen) setCountdown(getCountdown(openHour))
     }

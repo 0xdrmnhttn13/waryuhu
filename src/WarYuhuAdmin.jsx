@@ -70,12 +70,16 @@ export default function WarYuhuAdmin() {
     if (isNaN(hour) || hour < 0 || hour > 23) return
     setSavingTime(true)
     try {
-      await supabase
+      const { error } = await supabase
         .from("settings")
         .upsert({ key: "queue_open_hour", value: String(hour) }, { onConflict: "key" })
+      if (error) throw error
       setOpenHour(hour)
       setTimeSaved(true)
       setTimeout(() => setTimeSaved(false), 2000)
+    } catch (err) {
+      console.error("Failed to save open hour:", err)
+      alert("Gagal simpan: " + (err.message || err))
     } finally {
       setSavingTime(false)
     }

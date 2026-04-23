@@ -1,15 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
-import {
-  Swords,
-  Ticket,
-  Users,
-  Trophy,
-  RefreshCw,
-  Flame,
-  Zap,
-  Ban,
-  Clock,
-} from "lucide-react"
+import { Users, Ticket, Trophy, RefreshCw, Clock, X, CheckCircle, Sun, Moon } from "lucide-react"
+import confetti from "canvas-confetti"
 import { supabase } from "./supabaseClient"
 
 const STORAGE_KEY = "waryuhu:queue"
@@ -17,105 +8,38 @@ const DEVICE_ID_KEY = "waryuhu:deviceId"
 const MAX_QUEUE_SIZE = 10
 
 const WHITELISTED_USERS = [
-  "Wahyudi",
-  "Silvia Phungky",
-  "Aditya Brahmayoga",
-  "Mira Iskarnita A",
-  "Reno Rizdano",
-  "Fadilla Tourizqua Zain",
-  "Teguh Riyanto",
-  "Karina Nuzul Fitria",
-  "Anis Ferisa Nurlistiani",
-  "Yesty Desca Refita Putri",
-  "Widya Sitaresmi",
-  "Rafli Putra",
-  "Ilyyas Sukmadjarna",
-  "Joshua Pohan",
-  "Muhammad Yuka Langbuana",
-  "Rizky Muhammad Reza",
-  "Muhammad Revy Saladdin",
-  "Said Muhammad Yahya",
-  "Ruth Marlina Hutabarat",
-  "Hendra Nugraha",
-  "Ayodhia Tri Harmanto",
-  "Marsel Widjaja",
-  "Ari Arsadi",
-  "Irfan Asidiq",
-  "Handik Yuwono",
-  "Michael Sotaronggal Manurung",
-  "Rezha Satria",
-  "Ivan Julius Liefrance",
-  "Yulia Melda",
-  "Poppy Buana Mega Putri",
-  "Muhammad Ahadian Razzaq",
-  "Paramita Sari",
-  "Rheco Paradhika Kusuma",
-  "Rifqi Dika Hamana",
-  "Gagah Kharismanuary",
-  "Andi Danca Prima Raharja",
-  "Achmad Fauzi",
-  "Hakki Haromain",
-  "Aditya Fabio Hariawan",
-  "Hendra Pria Utama",
-  "Alfina Megasiwi",
-  "Rafli Hidayat",
-  "Nur Choirudin",
-  "Muhammad Noor",
-  "Sri Wahyuni",
-  "Muhammad Afifuddin Al Rasyid",
-  "Aliffia Permata Sakarosa",
-  "Carmudi",
-  "Eko Fajar Putra",
-  "Daniel Henry",
-  "Meidiana Monica",
-  "Marsha Nayla Zulkarnain",
-  "Alya Natasha Andriani",
-  "Wresni Wahyu Widodo",
-  "I Putu Wisnuadi Prabawa Bukian",
-  "Alvin Lander",
-  "Hollyana Puteri Haryono",
-  "M Sidik Augi Rahmat",
-  "Thariq Alfa Benriska",
-  "Muhammad Husein",
-  "Hendy Arin Wijaya",
-  "Aldyaz Gusti Nugroho",
-  "Kadek Wikananda Laksmana Priambada",
-  "Adrianto Prasetyo",
-  "Haris Saputra",
-  "Tia Sarwoedhi Pratama",
-  "Adam Afgani",
-  "Ibnu Bagus Syahputra",
-  "Fatah Fadhlurrohman",
-  "Ariyanto Sani",
-  "Valerian Mahdi Pratama",
-  "Ario Hardi Wibowo",
-  "Davin Suteja",
-  "Made Arbi Parameswara",
-  "Rahmah Nur Rizki",
-  "Rio Arjuna",
-  "Rivaldo Fernandes",
+  "Wahyudi","Silvia Phungky","Aditya Brahmayoga","Mira Iskarnita A","Reno Rizdano",
+  "Fadilla Tourizqua Zain","Teguh Riyanto","Karina Nuzul Fitria","Anis Ferisa Nurlistiani",
+  "Yesty Desca Refita Putri","Widya Sitaresmi","Rafli Putra","Ilyyas Sukmadjarna",
+  "Joshua Pohan","Muhammad Yuka Langbuana","Rizky Muhammad Reza","Muhammad Revy Saladdin",
+  "Said Muhammad Yahya","Ruth Marlina Hutabarat","Hendra Nugraha","Ayodhia Tri Harmanto",
+  "Marsel Widjaja","Ari Arsadi","Irfan Asidiq","Handik Yuwono",
+  "Michael Sotaronggal Manurung","Rezha Satria","Ivan Julius Liefrance","Yulia Melda",
+  "Poppy Buana Mega Putri","Muhammad Ahadian Razzaq","Paramita Sari","Rheco Paradhika Kusuma",
+  "Rifqi Dika Hamana","Gagah Kharismanuary","Andi Danca Prima Raharja","Achmad Fauzi",
+  "Hakki Haromain","Aditya Fabio Hariawan","Hendra Pria Utama","Alfina Megasiwi",
+  "Rafli Hidayat","Nur Choirudin","Muhammad Noor","Sri Wahyuni",
+  "Muhammad Afifuddin Al Rasyid","Aliffia Permata Sakarosa","Carmudi","Eko Fajar Putra",
+  "Daniel Henry","Meidiana Monica","Marsha Nayla Zulkarnain","Alya Natasha Andriani",
+  "Wresni Wahyu Widodo","I Putu Wisnuadi Prabawa Bukian","Alvin Lander",
+  "Hollyana Puteri Haryono","M Sidik Augi Rahmat","Thariq Alfa Benriska","Muhammad Husein",
+  "Hendy Arin Wijaya","Aldyaz Gusti Nugroho","Kadek Wikananda Laksmana Priambada",
+  "Adrianto Prasetyo","Haris Saputra","Tia Sarwoedhi Pratama","Adam Afgani",
+  "Ibnu Bagus Syahputra","Fatah Fadhlurrohman","Ariyanto Sani","Valerian Mahdi Pratama",
+  "Ario Hardi Wibowo","Davin Suteja","Made Arbi Parameswara","Rahmah Nur Rizki",
+  "Rio Arjuna","Rivaldo Fernandes",
 ]
 
 const generateDeviceId = () => {
   const timestamp = Date.now().toString(36)
   const randomPart = Math.random().toString(36).substring(2, 15)
-  const navigatorInfo = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width,
-    screen.height,
-    new Date().getTimezoneOffset(),
-  ].join("-")
-  const hash = btoa(navigatorInfo).substring(0, 12)
-  return `${timestamp}-${randomPart}-${hash}`
+  const navigatorInfo = [navigator.userAgent, navigator.language, screen.width, screen.height, new Date().getTimezoneOffset()].join("-")
+  return `${timestamp}-${randomPart}-${btoa(navigatorInfo).substring(0, 12)}`
 }
 
 const getDeviceId = () => {
   let deviceId = localStorage.getItem(DEVICE_ID_KEY)
-  if (!deviceId) {
-    deviceId = generateDeviceId()
-    localStorage.setItem(DEVICE_ID_KEY, deviceId)
-  }
+  if (!deviceId) { deviceId = generateDeviceId(); localStorage.setItem(DEVICE_ID_KEY, deviceId) }
   return deviceId
 }
 
@@ -123,7 +47,6 @@ const getCountdown = (hour) => {
   const now = new Date()
   const target = new Date()
   target.setHours(hour, 0, 0, 0)
-  // Kalau sudah lewat jam buka hari ini, hitung ke besok
   if (now.getHours() < hour && now >= target) target.setDate(target.getDate() + 1)
   const diff = target - now
   if (diff <= 0) return "00:00:00"
@@ -133,34 +56,91 @@ const getCountdown = (hour) => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
+const DARK = {
+  bg: "#0D0D0D", card: "#1A1A1A", card2: "#161616", card3: "#252525",
+  inputBg: "#252525", inputDisabled: "#141414",
+  t1: "#EFEFEF", t2: "#DDDDDD", t3: "#AAAAAA", t4: "#888888", t5: "#666666", t6: "#3F3F3F",
+  border: "#2E2E2E", border2: "#252525", border3: "#222222",
+  orangeBg: "#2A1800", greenBg: "#0A200A", redBg: "#2A0808",
+  ownBg: "#0A1E10", firstBg: "#1A1800",
+  shadow1: "0 2px 16px rgba(0,0,0,0.55)", shadow2: "0 2px 8px rgba(0,0,0,0.45)",
+  green: "#66BB6A", red: "#EF5350", orange: "#FFA040",
+  suggHover: "#2A1800", rowHover: "#252525",
+}
+const LIGHT = {
+  bg: "#F5F1EA", card: "#FFFFFF", card2: "#FAFAFA", card3: "#F3F4F6",
+  inputBg: "#FFFFFF", inputDisabled: "#F9F9F9",
+  t1: "#1A1A1A", t2: "#333333", t3: "#555555", t4: "#666666", t5: "#999999", t6: "#CCCCCC",
+  border: "#E5E7EB", border2: "#F3F4F6", border3: "#F5F5F5",
+  orangeBg: "#FFF3E0", greenBg: "#E8F5E9", redBg: "#FFEBEE",
+  ownBg: "#F1FBF4", firstBg: "#FFFBF5",
+  shadow1: "0 2px 16px rgba(0,0,0,0.08)", shadow2: "0 2px 8px rgba(0,0,0,0.06)",
+  green: "#2E7D32", red: "#C62828", orange: "#E65100",
+  suggHover: "#FFF3E0", rowHover: "#F9F9F9",
+}
+
+const HOW_TO_STEPS = [
+  {
+    step: "01", icon: "✍️", color: "#1CABE2",
+    title: "Isi Nama Lengkap",
+    desc: "Ketik nama lengkap kamu di kolom yang tersedia, lalu pilih dari daftar yang muncul.",
+  },
+  {
+    step: "02", icon: "🍱", color: "#F26A21",
+    title: "Pencet Antri YUHUUU",
+    desc: "Klik tombol \"Antri Yuhu\" dan nama kamu akan langsung muncul di Antrian Yuhu.",
+  },
+  {
+    step: "03", icon: "📢", color: "#28A745",
+    title: "Teriak ke Mas Norti / Reksa",
+    desc: "Setelah masuk antrian, langsung teriak:\n\"MAS SAYA ANTRIAN KE [nomor antrian]\"",
+  },
+]
+
 export default function WarYuhuUser() {
   const [queue, setQueue] = useState([])
   const [name, setName] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [openHour, setOpenHour] = useState(17)
   const [submitting, setSubmitting] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
   const [lastTicket, setLastTicket] = useState(null)
   const [error, setError] = useState("")
   const [deviceId] = useState(getDeviceId())
   const [countdown, setCountdown] = useState("")
   const [canRegister, setCanRegister] = useState(false)
+  const [hoveredTicket, setHoveredTicket] = useState(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successTicketNumber, setSuccessTicketNumber] = useState(null)
+  const [isDark, setIsDark] = useState(true)
   const inputRef = useRef(null)
+  const audioRef = useRef(null)
+
+  const th = isDark ? DARK : LIGHT
+
+  useEffect(() => { audioRef.current = new Audio("/antri-success.mp3") }, [])
+
+  const triggerSuccess = (ticketNumber) => {
+    setSuccessTicketNumber(ticketNumber)
+    setShowSuccessModal(true)
+    if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}) }
+    const canvas = document.createElement("canvas")
+    canvas.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none;"
+    document.body.appendChild(canvas)
+    const myConfetti = confetti.create(canvas, { resize: true, useWorker: true })
+    const colors = ["#F26A21", "#1CABE2", "#28A745", "#FFD700", "#FF6B6B", "#ffffff"]
+    const burst = () => myConfetti({ particleCount: 100, spread: 90, origin: { y: 0.5 }, colors })
+    burst(); setTimeout(burst, 300); setTimeout(burst, 600)
+    setTimeout(() => { myConfetti.reset(); canvas.remove() }, 4000)
+  }
 
   useEffect(() => {
-    loadQueue()
-    loadSettings()
-    const channel = supabase
-      .channel("queue-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => {
-        loadQueue()
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => {
-        loadSettings()
-      })
+    loadQueue(); loadSettings()
+    const channel = supabase.channel("queue-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => loadQueue())
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => loadSettings())
       .subscribe()
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => supabase.removeChannel(channel)
   }, [])
 
   useEffect(() => {
@@ -176,510 +156,384 @@ export default function WarYuhuUser() {
 
   const loadSettings = async () => {
     try {
-      const { data } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "queue_open_hour")
-        .single()
+      const { data } = await supabase.from("settings").select("value").eq("key", "queue_open_hour").single()
       if (data) setOpenHour(parseInt(data.value))
-    } catch {
-      // fallback to default 17
-    }
+    } catch {}
   }
 
   const loadQueue = async () => {
     try {
-      const { data, error } = await supabase
-        .from("queue")
-        .select("*")
-        .order("ticket", { ascending: true })
-
-      if (error) {
-        const raw = localStorage.getItem(STORAGE_KEY)
-        setQueue(raw ? JSON.parse(raw) : [])
-        return
-      }
+      const { data, error } = await supabase.from("queue").select("*").order("ticket", { ascending: true })
+      if (error) { const raw = localStorage.getItem(STORAGE_KEY); setQueue(raw ? JSON.parse(raw) : []); return }
       setQueue(data || [])
-    } catch {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      setQueue(raw ? JSON.parse(raw) : [])
-    }
+    } catch { const raw = localStorage.getItem(STORAGE_KEY); setQueue(raw ? JSON.parse(raw) : []) }
   }
 
-  const getNextTicketNumber = () => {
-    return queue.length + 1
-  }
-
-  const hasDeviceRegistered = () => {
-    return queue.some((entry) => entry.deviceId === deviceId)
-  }
-
-  const hasNameRegistered = (n) => {
-    return queue.some((entry) => entry.displayName === n || entry.name === n)
-  }
-
-  const getMyTicket = () => {
-    return queue.find((entry) => entry.deviceId === deviceId)
-  }
+  const hasDeviceRegistered = () => queue.some((e) => e.deviceId === deviceId)
+  const hasNameRegistered = (n) => queue.some((e) => e.displayName === n || e.name === n)
+  const getMyTicket = () => queue.find((e) => e.deviceId === deviceId)
 
   useEffect(() => {
     const myTicket = getMyTicket()
-    if (myTicket && !lastTicket) {
-      setLastTicket(myTicket)
-    }
+    if (myTicket && !lastTicket) setLastTicket(myTicket)
   }, [queue])
 
   const handleSubmit = async () => {
     setError("")
-
-    if (!canRegister) {
-      setError(`Pendaftaran hanya bisa jam ${String(openHour).padStart(2, "0")}:00!`)
-      return
-    }
-
-    if (!name.trim()) {
-      setError("Pilih nama dari daftar!")
-      return
-    }
-
-    if (!WHITELISTED_USERS.includes(name.trim())) {
-      setError("Nama tidak ada di daftar! Pilih dari rekomendasi.")
-      return
-    }
+    if (!canRegister) { setError(`Pendaftaran hanya bisa jam ${String(openHour).padStart(2, "0")}:00!`); return }
+    if (!name.trim()) { setError("Pilih nama dari daftar!"); return }
+    if (!WHITELISTED_USERS.includes(name.trim())) { setError("Nama tidak ada di daftar! Pilih dari rekomendasi."); return }
 
     setSubmitting(true)
     try {
-      // Fresh check dari DB sebelum insert
-      const { data: freshQueue, error: fetchError } = await supabase
-        .from("queue")
-        .select("*")
-        .order("ticket", { ascending: true })
-
-      if (fetchError) {
-        setError("Gagal cek antrian, coba lagi!")
-        setSubmitting(false)
-        return
-      }
-
-      if (freshQueue.length >= MAX_QUEUE_SIZE) {
-        setError("Queue penuh! Maksimal 10 orang.")
-        await loadQueue()
-        setSubmitting(false)
-        return
-      }
-
-      if (freshQueue.some((e) => e.deviceId === deviceId)) {
-        setError("Lo udah daftar! Satu device cuma bisa ambil satu tiket.")
-        await loadQueue()
-        setSubmitting(false)
-        return
-      }
-
-      if (freshQueue.some((e) => e.displayName === name.trim() || e.name === name.trim())) {
-        setError(`${name} udah ada yang ambil! Pilih nama lain.`)
-        await loadQueue()
-        setSubmitting(false)
-        return
-      }
+      const { data: freshQueue, error: fetchError } = await supabase.from("queue").select("*").order("ticket", { ascending: true })
+      if (fetchError) { setError("Gagal cek antrian, coba lagi!"); setSubmitting(false); return }
+      if (freshQueue.length >= MAX_QUEUE_SIZE) { setError("Antrian penuh! Maksimal 10 peserta."); await loadQueue(); setSubmitting(false); return }
+      if (freshQueue.some((e) => e.deviceId === deviceId)) { setError("Anda sudah terdaftar! Satu perangkat hanya bisa satu tiket."); await loadQueue(); setSubmitting(false); return }
+      if (freshQueue.some((e) => e.displayName === name.trim() || e.name === name.trim())) { setError(`${name} sudah terdaftar! Pilih nama lain.`); await loadQueue(); setSubmitting(false); return }
 
       const isWahyudi = name.trim().toLowerCase() === "wahyudi"
       let ticketNumber
 
       if (isWahyudi) {
-        const wahyudiExists = freshQueue.some(
-          (e) => e.displayName?.toLowerCase() === "wahyudi" || e.name?.toLowerCase() === "wahyudi"
-        )
-        if (wahyudiExists) {
-          setError("Wahyudi udah ada di queue!")
-          setSubmitting(false)
-          return
-        }
+        const wahyudiExists = freshQueue.some((e) => e.displayName?.toLowerCase() === "wahyudi" || e.name?.toLowerCase() === "wahyudi")
+        if (wahyudiExists) { setError("Wahyudi sudah ada di antrian!"); setSubmitting(false); return }
         ticketNumber = 1
-
-        const { error: updateError } = await supabase
-          .from("queue")
-          .update({ ticket: freshQueue.length + 1 })
-          .gte("ticket", 1)
-
-        if (updateError) {
-          console.error("Error updating tickets:", updateError)
-        }
+        const { error: updateError } = await supabase.from("queue").update({ ticket: freshQueue.length + 1 }).gte("ticket", 1)
+        if (updateError) console.error("Error updating tickets:", updateError)
       } else {
         ticketNumber = freshQueue.length + 1
       }
 
-      const entry = {
-        ticket: ticketNumber,
-        name: name.trim(),
-        displayName: name.trim(),
-        timestamp: new Date().toISOString(),
-        deviceId: deviceId,
-        priority: isWahyudi ? 1 : 0,
-      }
-
+      const entry = { ticket: ticketNumber, name: name.trim(), displayName: name.trim(), timestamp: new Date().toISOString(), deviceId, priority: isWahyudi ? 1 : 0 }
       const { error: insertError } = await supabase.from("queue").insert([entry])
-
-      if (insertError) {
-        console.error("Insert error:", insertError)
-        setError(`DB Error: ${insertError.message}`)
-        setSubmitting(false)
-        return
-      } else {
-        await loadQueue()
-      }
-
-      setLastTicket(entry)
-      setName("")
-    } catch (err) {
-      setError("Gagal daftar, coba lagi ya!")
-      console.error(err)
-    } finally {
-      setSubmitting(false)
-    }
+      if (insertError) { setError(`Gagal daftar: ${insertError.message}`); setSubmitting(false); return }
+      await loadQueue()
+      setLastTicket(entry); setName(""); triggerSuccess(ticketNumber)
+    } catch (err) { setError("Gagal daftar, coba lagi ya!"); console.error(err) }
+    finally { setSubmitting(false) }
   }
 
-  const formatTime = (iso) => {
-    const d = new Date(iso)
-    return d.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })
+  const handleCancel = async () => {
+    if (!confirm("Yakin mau batalkan antrian Anda?")) return
+    setCancelling(true)
+    const { error } = await supabase.from("queue").delete().eq("deviceId", deviceId)
+    if (error) { alert("Gagal batalkan: " + error.message); setCancelling(false); return }
+    setLastTicket(null); setHoveredTicket(null); await loadQueue(); setCancelling(false)
   }
+
+  const formatTime = (iso) => new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
 
   const suggestions = WHITELISTED_USERS.filter(
-    (n) =>
-      !hasNameRegistered(n) &&
-      (name.trim() === "" || n.toLowerCase().includes(name.toLowerCase()))
+    (n) => !hasNameRegistered(n) && (name.trim() === "" || n.toLowerCase().includes(name.toLowerCase()))
   ).slice(0, 8)
 
   const isQueueFull = queue.length >= MAX_QUEUE_SIZE
+  const myTicket = getMyTicket()
 
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{
-        background: "radial-gradient(ellipse at top, #2a0a0a 0%, #0a0505 50%, #000 100%)",
-        fontFamily: "'Space Mono', 'Courier New', monospace",
-      }}
-    >
-      <div
-        className="fixed inset-0 pointer-events-none opacity-20 mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")",
-        }}
-      />
+    <div style={{ minHeight: "100vh", fontFamily: "'Segoe UI', system-ui, sans-serif", position: "relative", background: th.bg, transition: "background 0.3s, color 0.3s" }}>
 
-      <div className="relative max-w-6xl mx-auto px-6 py-10">
-        <div className="mb-10 border-b-2 border-red-900/50 pb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Swords className="w-10 h-10 text-red-500" strokeWidth={1.5} />
+      {/* Animated BG */}
+      <div style={{
+        position: "fixed", pointerEvents: "none", zIndex: 0,
+        width: "200vmax", height: "200vmax", top: "50%", left: "50%",
+        backgroundImage: "url('https://img.harianjogja.com/posts/2025/12/02/1237730/mbg2.jpg')",
+        backgroundSize: "cover", backgroundPosition: "center",
+        opacity: isDark ? 0.22 : 0.14,
+        animation: "bgRotatePulse 8s ease-in-out infinite",
+      }} />
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: th.card, borderRadius: "28px", padding: "44px 48px", textAlign: "center", maxWidth: "380px", width: "90%", boxShadow: "0 24px 80px rgba(0,0,0,0.5)", animation: "popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275)" }}>
+            <div style={{ fontSize: "64px", marginBottom: "12px", lineHeight: 1 }}>🎉</div>
+            <div style={{ fontSize: "22px", fontWeight: "800", color: th.t1, marginBottom: "6px" }}>Antri Yuhu Berhasil!</div>
+            <div style={{ fontSize: "14px", color: th.t4, marginBottom: "16px" }}>Kamu dapat antrian ke</div>
+            <div style={{ fontSize: "80px", fontWeight: "900", fontFamily: "monospace", lineHeight: 1, background: "linear-gradient(135deg, #F26A21, #1CABE2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "24px" }}>
+              #{String(successTicketNumber).padStart(3, "0")}
+            </div>
+            <button onClick={() => setShowSuccessModal(false)} style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #F26A21, #E85D0E)", border: "none", borderRadius: "12px", color: "white", fontWeight: "700", fontSize: "15px", cursor: "pointer", boxShadow: "0 4px 16px rgba(242,106,33,0.4)" }}>
+              Sip, Tutup!
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ position: "relative", zIndex: 1, maxWidth: "1100px", margin: "0 auto", padding: "24px 20px" }}>
+
+        {/* Header */}
+        <div style={{ background: th.card, borderRadius: "20px", padding: "20px 28px", marginBottom: "16px", boxShadow: th.shadow1, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: "linear-gradient(135deg, #F26A21, #E8A020)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px" }}>🍱</div>
             <div>
-              <h1
-                className="text-5xl md:text-7xl font-black tracking-tighter leading-none"
-                style={{
-                  background: "linear-gradient(180deg, #ff3b3b 0%, #8b0000 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  fontFamily: "'Bebas Neue', 'Arial Black', sans-serif",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                WAR<span className="text-yellow-500">YUHU</span>
-              </h1>
-              <p className="text-red-300/60 text-xs md:text-sm tracking-[0.3em] uppercase mt-1">
-                Berjuang hingga yuhu penghabisan
-              </p>
+              <div style={{ fontSize: "24px", fontWeight: "800", color: th.t1, lineHeight: 1 }}>
+                War<span style={{ color: "#F26A21" }}>YUHUUU</span>
+              </div>
+              <div style={{ fontSize: "11px", color: th.t5, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: "2px" }}>Program Makan Bergizi Gratis</div>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-xs text-red-400/70 uppercase tracking-widest">
-            <span className="flex items-center gap-1">
-              <Flame className="w-3 h-3" /> Live Queue
-            </span>
-            <span>•</span>
-            <span>
-              {queue.length}/{MAX_QUEUE_SIZE} prajurit terdaftar
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
+
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "13px", color: th.t4 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#28A745", display: "inline-block", animation: "pulse 2s infinite" }} />
+                Live Queue
+              </span>
+              <span style={{ color: th.t2, fontWeight: "600" }}>{queue.length}/{MAX_QUEUE_SIZE} peserta</span>
               {canRegister ? (
-                <span className="text-yellow-500 font-bold animate-pulse">PERANG DIMULAI!</span>
+                <span style={{ background: th.greenBg, color: th.green, padding: "4px 12px", borderRadius: "20px", fontWeight: "700", fontSize: "12px" }}>✓ Pendaftaran Dibuka!</span>
               ) : (
-                <span>Buka dalam <span className="text-yellow-500 tabular-nums font-bold">{countdown}</span></span>
+                <span style={{ background: th.orangeBg, color: th.orange, padding: "4px 12px", borderRadius: "20px", fontWeight: "600", fontSize: "12px" }}>
+                  <Clock size={12} style={{ display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
+                  Buka dalam <strong style={{ fontFamily: "monospace" }}>{countdown}</strong>
+                </span>
               )}
-            </span>
+            </div>
+            {/* Dark/Light switcher */}
+            <button
+              onClick={() => setIsDark(!isDark)}
+              title={isDark ? "Switch ke Light Mode" : "Switch ke Dark Mode"}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "7px 14px", borderRadius: "20px", border: `1.5px solid ${th.border}`,
+                background: th.card2, color: th.t2, cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                transition: "all 0.2s",
+              }}
+            >
+              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+              {isDark ? "Light" : "Dark"}
+            </button>
           </div>
         </div>
 
-        {isQueueFull && !hasDeviceRegistered() && (
-          <div className="mb-6 text-center border-2 border-red-600 bg-red-950/40 py-4">
-            <Ban className="w-8 h-8 text-red-500 mx-auto mb-2" />
-            <div className="text-red-400 text-sm uppercase tracking-widest">
-              Queue Penuh! ({MAX_QUEUE_SIZE} orang)
+        {/* How-to-use Bento */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "20px" }} className="bento-steps">
+          {HOW_TO_STEPS.map((item) => (
+            <div key={item.step} style={{ background: th.card, borderRadius: "16px", padding: "20px", boxShadow: th.shadow2, borderTop: `3px solid ${item.color}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: item.color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
+                  {item.icon}
+                </div>
+                <span style={{ fontSize: "11px", fontWeight: "800", color: item.color, letterSpacing: "1px", textTransform: "uppercase" }}>
+                  Step {item.step}
+                </span>
+              </div>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: th.t1 }}>{item.title}</div>
+              <div style={{ fontSize: "12px", color: th.t4, lineHeight: "1.6", whiteSpace: "pre-line" }}>{item.desc}</div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Main grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+          {/* Left: Registration */}
           <div className="lg:col-span-2">
-            <div
-              className="relative p-6 border-2 border-red-900/40 bg-black/60 backdrop-blur"
-              style={{
-                clipPath:
-                  "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
-              }}
-            >
-              <div className="flex items-center gap-2 mb-6">
-                <Zap className="w-5 h-5 text-yellow-500" />
-                <h2 className="text-yellow-500 uppercase tracking-[0.25em] text-sm font-bold">
-                  {hasDeviceRegistered() ? "Tiket Lo Udah Ada" : "Daftar Perang"}
-                </h2>
+            <div style={{ background: th.card, borderRadius: "20px", padding: "24px", boxShadow: th.shadow1 }}>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: th.t2, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Ticket size={16} color="#F26A21" />
+                {hasDeviceRegistered() ? "Tiket Anda" : "Daftar Antrian"}
               </div>
 
               {!canRegister && !hasDeviceRegistered() && (
-                <div className="text-center py-6 mb-4 border-2 border-red-500/50 bg-red-950/30">
-                  <Clock className="w-10 h-10 text-red-500 mx-auto mb-3 animate-pulse" />
-                  <div className="text-red-400 text-xs uppercase tracking-widest mb-3">
-                    Perang dibuka jam {String(openHour).padStart(2, "0")}:00
-                  </div>
-                  <div
-                    className="text-4xl font-black text-yellow-400 tabular-nums tracking-widest"
-                    style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                  >
-                    {countdown}
-                  </div>
-                  <div className="text-red-600/50 text-[10px] uppercase tracking-widest mt-2">
-                    countdown to war
-                  </div>
+                <div style={{ background: th.orangeBg, border: `1.5px solid ${isDark ? "#5A3000" : "#FFCC80"}`, borderRadius: "14px", padding: "20px", textAlign: "center", marginBottom: "20px" }}>
+                  <Clock size={28} color="#F26A21" style={{ margin: "0 auto 8px" }} />
+                  <div style={{ fontSize: "11px", color: th.t5, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>Dibuka jam {String(openHour).padStart(2, "0")}:00</div>
+                  <div style={{ fontSize: "34px", fontWeight: "800", color: "#F26A21", fontFamily: "monospace" }}>{countdown}</div>
+                </div>
+              )}
+
+              {isQueueFull && !hasDeviceRegistered() && (
+                <div style={{ background: th.redBg, border: `1.5px solid ${isDark ? "#5A1010" : "#FFCDD2"}`, borderRadius: "10px", padding: "12px 16px", textAlign: "center", marginBottom: "16px", fontSize: "13px", color: th.red, fontWeight: "600" }}>
+                  Antrian penuh ({MAX_QUEUE_SIZE} peserta)
                 </div>
               )}
 
               {hasDeviceRegistered() ? (
-                <div className="text-center py-4">
-                  <Ban className="w-10 h-10 text-red-500 mx-auto mb-3" />
-                  <div className="text-red-400 text-xs uppercase tracking-widest">
-                    Satu device cuma bisa satu tiket
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ background: isDark ? "linear-gradient(135deg, #2A1800, #1E1200)" : "linear-gradient(135deg, #FFF3E0, #FFF8E1)", border: "2px solid #F26A21", borderRadius: "14px", padding: "20px", textAlign: "center" }}>
+                    <CheckCircle size={20} color="#F26A21" style={{ margin: "0 auto 6px" }} />
+                    <div style={{ fontSize: "11px", color: th.t5, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Tiket Anda</div>
+                    <div style={{ fontSize: "52px", fontWeight: "900", color: "#F26A21", lineHeight: 1, fontFamily: "monospace" }}>#{String(myTicket?.ticket ?? 0).padStart(3, "0")}</div>
+                    <div style={{ fontSize: "15px", fontWeight: "600", color: th.t2, marginTop: "8px" }}>{myTicket?.displayName || myTicket?.name}</div>
                   </div>
+                  <button onClick={handleCancel} disabled={cancelling} style={{ width: "100%", padding: "11px", background: th.card, border: `1.5px solid ${th.red}`, borderRadius: "10px", color: th.red, fontWeight: "600", fontSize: "13px", cursor: cancelling ? "not-allowed" : "pointer", opacity: cancelling ? 0.6 : 1, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {cancelling ? "Membatalkan..." : "Batalkan Antrian"}
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                   <div>
-                    <label className="block text-red-300/80 text-xs uppercase tracking-widest mb-2">
-                      &gt; Nama Lo
-                    </label>
-                    <div className="relative">
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: th.t3, textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: "8px" }}>Nama Anda</label>
+                    <div style={{ position: "relative" }}>
                       <input
-                        ref={inputRef}
-                        type="text"
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value)
-                          setShowSuggestions(true)
-                        }}
+                        ref={inputRef} type="text" value={name}
+                        onChange={(e) => { setName(e.target.value); setShowSuggestions(true) }}
                         onFocus={() => setShowSuggestions(true)}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                        placeholder="Ketik nama lo..."
+                        placeholder="Ketik nama Anda..."
                         disabled={!canRegister || isQueueFull}
-                        className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-red-800/50"
+                        style={{ width: "100%", padding: "11px 14px", border: `1.5px solid ${th.border}`, borderRadius: "10px", fontSize: "14px", color: th.t1, background: (!canRegister || isQueueFull) ? th.inputDisabled : th.inputBg, outline: "none", boxSizing: "border-box" }}
                       />
                       {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute z-10 w-full bg-[#120505] border border-red-800/50 border-t-0 max-h-48 overflow-y-auto">
+                        <div style={{ position: "absolute", zIndex: 20, width: "100%", background: th.card, border: `1.5px solid ${th.border}`, borderTop: "none", borderRadius: "0 0 10px 10px", maxHeight: "200px", overflowY: "auto", boxShadow: th.shadow1 }}>
                           {suggestions.map((n) => (
-                            <div
-                              key={n}
-                              onMouseDown={() => {
-                                setName(n)
-                                setShowSuggestions(false)
-                              }}
-                              className="px-4 py-2 text-red-100 text-sm hover:bg-red-950/60 cursor-pointer border-b border-red-900/20"
-                            >
-                              {n}
-                            </div>
+                            <div key={n} onMouseDown={() => { setName(n); setShowSuggestions(false) }}
+                              style={{ padding: "10px 14px", fontSize: "13px", color: th.t2, cursor: "pointer", borderBottom: `1px solid ${th.border3}` }}
+                              onMouseOver={(e) => e.currentTarget.style.background = th.suggHover}
+                              onMouseOut={(e) => e.currentTarget.style.background = th.card}
+                            >{n}</div>
                           ))}
                         </div>
                       )}
                       {showSuggestions && name.trim() !== "" && suggestions.length === 0 && (
-                        <div className="absolute z-10 w-full bg-[#120505] border border-red-800/50 border-t-0 px-4 py-2 text-red-500 text-xs uppercase tracking-widest">
-                          Nama tidak ditemukan
-                        </div>
+                        <div style={{ position: "absolute", zIndex: 20, width: "100%", background: th.card, border: `1.5px solid ${th.border}`, borderTop: "none", borderRadius: "0 0 10px 10px", padding: "10px 14px", fontSize: "12px", color: th.t5 }}>Nama tidak ditemukan</div>
                       )}
                     </div>
                   </div>
 
                   {error && (
-                    <div className="text-red-400 text-xs uppercase tracking-widest border-l-2 border-red-500 pl-3 py-1">
-                      [!] {error}
-                    </div>
+                    <div style={{ fontSize: "13px", color: th.red, padding: "10px 14px", background: th.redBg, borderRadius: "8px", borderLeft: "3px solid #EF5350" }}>{error}</div>
                   )}
 
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitting || !canRegister || !name.trim() || isQueueFull}
-                    className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-yellow-500 hover:to-red-600 text-black font-black uppercase tracking-[0.25em] py-4 text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500 hover:border-yellow-400 shadow-lg shadow-red-900/50"
-                  >
-                    {submitting ? "▸ PROSES..." : "▸ ANTRI YUHU"}
+                  <button onClick={handleSubmit} disabled={submitting || !canRegister || !name.trim() || isQueueFull}
+                    style={{ width: "100%", padding: "13px", background: (submitting || !canRegister || !name.trim() || isQueueFull) ? th.card3 : "linear-gradient(135deg, #F26A21, #E85D0E)", border: "none", borderRadius: "10px", color: (submitting || !canRegister || !name.trim() || isQueueFull) ? th.t4 : "white", fontWeight: "700", fontSize: "14px", cursor: (submitting || !canRegister || !name.trim() || isQueueFull) ? "not-allowed" : "pointer", textTransform: "uppercase", letterSpacing: "0.5px", boxShadow: (submitting || !canRegister || !name.trim() || isQueueFull) ? "none" : "0 4px 12px rgba(242,106,33,0.35)" }}>
+                    {submitting ? "Mendaftar..." : "Antri Yuhu"}
                   </button>
-                </div>
-              )}
-
-              {lastTicket && (
-                <div
-                  className="mt-6 p-4 border-2 border-yellow-500/60 bg-gradient-to-br from-yellow-500/10 to-red-900/20"
-                  style={{
-                    animation: "pulse-glow 2s ease-in-out infinite",
-                  }}
-                >
-                  <div className="text-yellow-500/70 text-xs uppercase tracking-widest mb-1">
-                    Tiket Lo:
-                  </div>
-                  <div className="flex items-baseline gap-3">
-                    <Ticket className="w-6 h-6 text-yellow-500" />
-                    <span
-                      className="text-5xl font-black text-yellow-400"
-                      style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                    >
-                      #{String(lastTicket.ticket).padStart(3, "0")}
-                    </span>
-                  </div>
-                  <div className="text-red-200 text-sm mt-2">
-                    {lastTicket.displayName || lastTicket.name}
-                  </div>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="border border-red-900/40 bg-black/40 p-4">
-                <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-                  Total Pejuang
-                </div>
-                <div
-                  className="text-3xl font-black text-red-400"
-                  style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                >
-                  {String(queue.length).padStart(3, "0")}
-                </div>
+            {/* Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "16px" }}>
+              <div style={{ background: th.card, borderRadius: "14px", padding: "16px", boxShadow: th.shadow2 }}>
+                <div style={{ fontSize: "10px", color: th.t5, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Total Peserta</div>
+                <div style={{ fontSize: "30px", fontWeight: "800", color: "#1CABE2", fontFamily: "monospace" }}>{String(queue.length).padStart(3, "0")}</div>
               </div>
-              <div className="border border-red-900/40 bg-black/40 p-4">
-                <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-                  Yuhu Tersisa
-                </div>
-                <div
-                  className={`text-3xl font-black ${MAX_QUEUE_SIZE - queue.length <= 2 ? "text-red-500" : "text-yellow-500"}`}
-                  style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                >
-                  {String(MAX_QUEUE_SIZE - queue.length).padStart(2, "0")}
-                </div>
+              <div style={{ background: th.card, borderRadius: "14px", padding: "16px", boxShadow: th.shadow2 }}>
+                <div style={{ fontSize: "10px", color: th.t5, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Slot Tersisa</div>
+                <div style={{ fontSize: "30px", fontWeight: "800", fontFamily: "monospace", color: MAX_QUEUE_SIZE - queue.length <= 2 ? "#EF5350" : "#28A745" }}>{String(MAX_QUEUE_SIZE - queue.length).padStart(2, "0")}</div>
               </div>
             </div>
           </div>
 
+          {/* Right: Queue list */}
           <div className="lg:col-span-3">
-            <div className="border-2 border-red-900/40 bg-black/60 backdrop-blur">
-              <div className="flex items-center justify-between border-b-2 border-red-900/40 px-5 py-3 bg-red-950/20">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-red-400" />
-                  <h2 className="text-red-300 uppercase tracking-[0.25em] text-xs font-bold">
-                    Antrian Yuhu
-                  </h2>
+            <div style={{ background: th.card, borderRadius: "20px", boxShadow: th.shadow1, overflow: "hidden" }}>
+              <div style={{ padding: "16px 24px", borderBottom: `1.5px solid ${th.border2}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: th.card2 }}>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: th.t2, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Users size={15} color="#1CABE2" />
+                  Antrian Yuhu
                 </div>
-                <button
-                  onClick={loadQueue}
-                  className="text-red-400/70 hover:text-yellow-500 transition-colors p-1"
-                  title="Refresh"
-                >
-                  <RefreshCw className="w-4 h-4" />
+                <button onClick={loadQueue} style={{ background: "none", border: "none", cursor: "pointer", color: th.t6, padding: "4px" }} title="Refresh">
+                  <RefreshCw size={15} />
                 </button>
               </div>
 
               {queue.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Trophy className="w-12 h-12 text-red-900 mx-auto mb-3" strokeWidth={1} />
-                  <div className="text-red-500/60 uppercase tracking-widest text-xs">
-                    Belum ada yang antri
-                  </div>
-                  <div className="text-red-800 text-xs mt-2">Jadilah yang pertama!</div>
+                <div style={{ padding: "60px 24px", textAlign: "center" }}>
+                  <div style={{ fontSize: "48px", marginBottom: "10px" }}>🍽️</div>
+                  <div style={{ color: th.t5, fontSize: "14px", fontWeight: "500" }}>Belum ada yang antri</div>
+                  <div style={{ color: th.t6, fontSize: "12px", marginTop: "4px" }}>Jadilah yang pertama!</div>
                 </div>
               ) : (
-                <div className="max-h-[600px] overflow-y-auto">
-                  {queue.map((entry, idx) => (
-                    <div
-                      key={entry.ticket}
-                      className={`flex items-center gap-4 px-5 py-4 border-b border-red-900/20 hover:bg-red-950/20 transition-colors ${
-                        idx === 0 ? "bg-gradient-to-r from-yellow-500/10 to-transparent" : ""
-                      }`}
-                    >
-                      <div className="w-10 text-center">
-                        {idx === 0 ? (
-                          <Trophy className="w-5 h-5 text-yellow-500 mx-auto" />
-                        ) : (
-                          <span className="text-red-600/60 text-xs font-bold">
-                            {String(idx + 1).padStart(2, "0")}
+                <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+                  {queue.map((entry, idx) => {
+                    const isOwnEntry = entry.deviceId === deviceId
+                    const isHovered = hoveredTicket === entry.ticket
+                    return (
+                      <div
+                        key={entry.ticket}
+                        onMouseEnter={() => isOwnEntry && setHoveredTicket(entry.ticket)}
+                        onMouseLeave={() => setHoveredTicket(null)}
+                        className={isOwnEntry ? "own-entry-row" : ""}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "14px",
+                          padding: "14px 24px", borderBottom: `1px solid ${th.border3}`,
+                          background: isOwnEntry ? undefined : idx === 0 ? th.firstBg : th.card,
+                          transition: "opacity 0.15s",
+                        }}
+                      >
+                        <div style={{ width: "28px", textAlign: "center", flexShrink: 0 }}>
+                          {idx === 0 ? <Trophy size={17} color="#F26A21" /> : <span style={{ fontSize: "12px", fontWeight: "700", color: th.t6 }}>{String(idx + 1).padStart(2, "0")}</span>}
+                        </div>
+                        <div style={{ minWidth: "56px", flexShrink: 0 }}>
+                          <span style={{ fontSize: "19px", fontWeight: "800", fontFamily: "monospace", color: isOwnEntry ? "white" : idx === 0 ? "#F26A21" : "#1CABE2", textShadow: isOwnEntry ? "0 1px 4px rgba(0,0,0,0.3)" : "none" }}>
+                            #{String(entry.ticket).padStart(3, "0")}
                           </span>
-                        )}
-                      </div>
-
-                      <div className="min-w-[80px]">
-                        <div
-                          className={`text-2xl font-black leading-none ${
-                            idx === 0 ? "text-yellow-400" : "text-red-400"
-                          }`}
-                          style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                        >
-                          #{String(entry.ticket).padStart(3, "0")}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "14px", fontWeight: isOwnEntry ? "800" : "600", color: isOwnEntry ? "white" : th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "6px", textShadow: isOwnEntry ? "0 1px 3px rgba(0,0,0,0.25)" : "none" }}>
+                            {entry.displayName || entry.name}
+                            {isOwnEntry && (
+                              <span style={{ fontSize: "10px", background: "rgba(255,255,255,0.3)", color: "white", backdropFilter: "blur(4px)", padding: "2px 7px", borderRadius: "4px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", flexShrink: 0, border: "1px solid rgba(255,255,255,0.4)" }}>Anda</span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ flexShrink: 0 }}>
+                          {isOwnEntry && isHovered ? (
+                            <button onClick={handleCancel} disabled={cancelling} title="Batalkan antrian"
+                              style={{ background: "#EF5350", border: "none", borderRadius: "7px", color: "white", width: "30px", height: "30px", cursor: cancelling ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: cancelling ? 0.6 : 1, boxShadow: "0 2px 8px rgba(239,83,80,0.35)" }}>
+                              <X size={14} />
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: "11px", fontFamily: "monospace", color: isOwnEntry ? "rgba(255,255,255,0.75)" : th.t6 }}>
+                              {formatTime(entry.timestamp)}
+                            </span>
+                          )}
                         </div>
                       </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="text-red-100 font-bold truncate">
-                          {entry.displayName || entry.name}
-                        </div>
-                        <div className="text-red-500/70 text-xs uppercase tracking-widest truncate">
-                          {entry.jobTitle || entry.department || ""}
-                        </div>
-                      </div>
-
-                      <div className="text-red-600/60 text-[10px] uppercase tracking-widest tabular-nums hidden sm:block">
-                        {formatTime(entry.timestamp)}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="mt-6 text-center">
-          <a
-            href="#/admin"
-            className="text-red-600/60 text-xs uppercase tracking-widest hover:text-red-400 transition-colors"
-          >
-            Admin Login
-          </a>
+        <div style={{ textAlign: "center", marginTop: "24px" }}>
+          <a href="#/admin" style={{ color: th.t6, fontSize: "11px", textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px" }}>Admin Login</a>
         </div>
       </div>
 
       <style>{`
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
-          50% { box-shadow: 0 0 40px rgba(234, 179, 8, 0.4); }
+        @keyframes bgRotatePulse {
+          0%   { transform: translate(-50%, -50%) rotate(0deg)   scale(1); }
+          25%  { transform: translate(-50%, -50%) rotate(90deg)  scale(1.4); }
+          50%  { transform: translate(-50%, -50%) rotate(180deg) scale(1); }
+          75%  { transform: translate(-50%, -50%) rotate(270deg) scale(1.4); }
+          100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
         }
-
-        ::-webkit-scrollbar {
-          width: 8px;
+        @keyframes gradientMove {
+          0%   { background-position: 0% 50%; }
+          25%  { background-position: 100% 0%; }
+          50%  { background-position: 100% 100%; }
+          75%  { background-position: 0% 100%; }
+          100% { background-position: 0% 50%; }
         }
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.3);
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(185, 28, 28, 0.4);
+        @keyframes popIn {
+          0% { opacity: 0; transform: scale(0.7); }
+          100% { opacity: 1; transform: scale(1); }
         }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(234, 179, 8, 0.6);
+        .own-entry-row {
+          background: linear-gradient(-45deg, #1CABE2 0%, #0066cc 20%, #F26A21 40%, #ff9900 60%, #1CABE2 80%, #F26A21 100%) !important;
+          background-size: 500% 500% !important;
+          animation: gradientMove 1s linear infinite !important;
+          box-shadow: inset 0 0 20px rgba(255,255,255,0.15) !important;
         }
+        .own-entry-row:hover { opacity: 0.9; filter: brightness(1.1); }
+        .bento-steps { }
+        @media (max-width: 640px) { .bento-steps { grid-template-columns: 1fr !important; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #F26A21; }
       `}</style>
     </div>
   )

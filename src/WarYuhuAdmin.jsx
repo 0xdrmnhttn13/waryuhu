@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react"
 import {
-  Swords,
   Users,
   Trophy,
   RefreshCw,
-  Flame,
   LogOut,
   Shield,
   Trash2,
@@ -13,6 +11,7 @@ import {
   Crown,
   Clock,
   Save,
+  Search,
 } from "lucide-react"
 import { supabase } from "./supabaseClient"
 
@@ -24,6 +23,7 @@ export default function WarYuhuAdmin() {
   const [openHourInput, setOpenHourInput] = useState("17")
   const [savingTime, setSavingTime] = useState(false)
   const [timeSaved, setTimeSaved] = useState(false)
+  const [search, setSearch] = useState("")
 
   useEffect(() => {
     const isLoggedIn = sessionStorage.getItem("waryuhu:admin")
@@ -113,9 +113,7 @@ export default function WarYuhuAdmin() {
   const handleMoveUp = async (entry) => {
     const idx = queue.findIndex((e) => e.ticket === entry.ticket)
     if (idx <= 0) return
-
     const prevEntry = queue[idx - 1]
-
     try {
       await supabase.from("queue").update({ ticket: prevEntry.ticket }).eq("ticket", entry.ticket)
       await supabase.from("queue").update({ ticket: entry.ticket }).eq("ticket", prevEntry.ticket)
@@ -128,9 +126,7 @@ export default function WarYuhuAdmin() {
   const handleMoveDown = async (entry) => {
     const idx = queue.findIndex((e) => e.ticket === entry.ticket)
     if (idx >= queue.length - 1) return
-
     const nextEntry = queue[idx + 1]
-
     try {
       await supabase.from("queue").update({ ticket: nextEntry.ticket }).eq("ticket", entry.ticket)
       await supabase.from("queue").update({ ticket: entry.ticket }).eq("ticket", nextEntry.ticket)
@@ -142,7 +138,6 @@ export default function WarYuhuAdmin() {
 
   const handleRemove = async (entry) => {
     if (!confirm(`Yakin mau hapus ${entry.displayName || entry.name}?`)) return
-
     try {
       await supabase.from("queue").delete().eq("ticket", entry.ticket)
       await loadQueue()
@@ -160,232 +155,311 @@ export default function WarYuhuAdmin() {
     })
   }
 
-  return (
-    <div
-      className="min-h-screen w-full"
-      style={{
-        background: "radial-gradient(ellipse at top, #2a0a0a 0%, #0a0505 50%, #000 100%)",
-        fontFamily: "'Space Mono', 'Courier New', monospace",
-      }}
-    >
-      <div
-        className="fixed inset-0 pointer-events-none opacity-20 mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")",
-        }}
-      />
+  const filteredQueue = queue.filter((e) => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return (
+      (e.displayName || e.name || "").toLowerCase().includes(q) ||
+      (e.deviceId || "").toLowerCase().includes(q)
+    )
+  })
 
-      <div className="relative max-w-4xl mx-auto px-6 py-10">
-        <div className="mb-10 border-b-2 border-red-900/50 pb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Swords className="w-10 h-10 text-red-500" strokeWidth={1.5} />
-              <div>
-                <h1
-                  className="text-5xl md:text-7xl font-black tracking-tighter leading-none"
-                  style={{
-                    background: "linear-gradient(180deg, #ff3b3b 0%, #8b0000 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    fontFamily: "'Bebas Neue', 'Arial Black', sans-serif",
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  WAR<span className="text-yellow-500">YUHU</span>
-                </h1>
-                <p className="text-red-300/60 text-xs md:text-sm tracking-[0.3em] uppercase mt-1">
-                  Berjuang hingga yuhu penghabisan
-                </p>
+  return (
+    <div style={{ minHeight: "100vh", fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", position: "relative", background: "#0D0D0D" }}>
+
+      {/* MBG Background */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        backgroundImage: "url('/bg-mbg.jpg')",
+        backgroundSize: "cover", backgroundPosition: "center", opacity: 0.12,
+      }} />
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: "linear-gradient(160deg, rgba(255,140,0,0.10) 0%, rgba(40,167,69,0.08) 60%, rgba(28,171,226,0.08) 100%)",
+      }} />
+
+      <div style={{ position: "relative", zIndex: 1, maxWidth: "900px", margin: "0 auto", padding: "24px 20px" }}>
+
+        {/* Header */}
+        <div style={{
+          background: "#1A1A1A", borderRadius: "20px", padding: "18px 28px", marginBottom: "20px",
+          boxShadow: "0 2px 16px rgba(0,0,0,0.5)", display: "flex", alignItems: "center",
+          justifyContent: "space-between", flexWrap: "wrap", gap: "12px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{
+              width: "48px", height: "48px", borderRadius: "13px",
+              background: "linear-gradient(135deg, #F26A21, #E8A020)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px",
+            }}>🍱</div>
+            <div>
+              <div style={{ fontSize: "22px", fontWeight: "800", color: "#EFEFEF", lineHeight: 1 }}>
+                War<span style={{ color: "#F26A21" }}>YUHUUU</span>
+              </div>
+              <div style={{ fontSize: "10px", color: "#666666", textTransform: "uppercase", letterSpacing: "1.5px", marginTop: "2px" }}>
+                Program Makan Bergizi Gratis
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 text-yellow-500 text-xs uppercase tracking-widest border border-yellow-500/30 px-2 py-1">
-                <Shield className="w-3 h-3" /> Admin
-              </span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 text-red-400/70 hover:text-red-400 text-xs uppercase tracking-widest border border-red-800/50 px-2 py-1 hover:border-red-500 transition-colors"
-              >
-                <LogOut className="w-3 h-3" /> Logout
-              </button>
-            </div>
           </div>
-          <div className="flex items-center gap-4 text-xs text-red-400/70 uppercase tracking-widest">
-            <span className="flex items-center gap-1">
-              <Flame className="w-3 h-3" /> Live Queue
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              background: "#2A1800", color: "#F26A21", padding: "5px 12px",
+              borderRadius: "8px", fontSize: "12px", fontWeight: "700",
+            }}>
+              <Shield size={12} /> Admin
             </span>
-            <span>•</span>
-            <span>
-              {queue.length}/{MAX_QUEUE_SIZE} prajurit terdaftar
-            </span>
+            <button
+              onClick={handleLogout}
+              style={{
+                display: "flex", alignItems: "center", gap: "5px",
+                background: "#1A1A1A", border: "1.5px solid #2E2E2E", color: "#777777",
+                padding: "5px 12px", borderRadius: "8px", fontSize: "12px",
+                cursor: "pointer", fontWeight: "600",
+              }}
+            >
+              <LogOut size={12} /> Logout
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="border border-red-900/40 bg-black/40 p-4">
-            <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-              Total Pejuang
-            </div>
-            <div
-              className="text-3xl font-black text-red-400"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "18px" }}>
+          <div style={{ background: "#1A1A1A", borderRadius: "14px", padding: "18px", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+            <div style={{ fontSize: "10px", color: "#666666", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Total Peserta</div>
+            <div style={{ fontSize: "30px", fontWeight: "800", color: "#1CABE2", fontFamily: "monospace" }}>
               {String(queue.length).padStart(3, "0")}
             </div>
           </div>
-          <div className="border border-red-900/40 bg-black/40 p-4">
-            <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-              Slot Tersisa
-            </div>
-            <div
-              className={`text-3xl font-black ${MAX_QUEUE_SIZE - queue.length <= 2 ? "text-red-500" : "text-yellow-500"}`}
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
+          <div style={{ background: "#1A1A1A", borderRadius: "14px", padding: "18px", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+            <div style={{ fontSize: "10px", color: "#666666", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Slot Tersisa</div>
+            <div style={{
+              fontSize: "30px", fontWeight: "800", fontFamily: "monospace",
+              color: MAX_QUEUE_SIZE - queue.length <= 2 ? "#EF5350" : "#28A745",
+            }}>
               {String(MAX_QUEUE_SIZE - queue.length).padStart(2, "0")}
             </div>
           </div>
         </div>
 
-        <div className="border border-yellow-500/20 bg-black/40 p-4 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 text-yellow-500" />
-            <span className="text-yellow-500 text-xs uppercase tracking-widest font-bold">
-              Jam Buka Queue
+        {/* Open hour setting */}
+        <div style={{
+          background: "#1A1A1A", borderRadius: "16px", padding: "18px 24px",
+          marginBottom: "18px", boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+            <Clock size={15} color="#F26A21" />
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#DDDDDD", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Jam Buka Antrian
             </span>
-            <span className="text-red-500/50 text-xs ml-auto">
+            <span style={{ fontSize: "12px", color: "#444444", marginLeft: "auto" }}>
               Sekarang: {String(openHour).padStart(2, "0")}:00
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <input
-              type="number"
-              min="0"
-              max="23"
+              type="number" min="0" max="23"
               value={openHourInput}
               onChange={(e) => setOpenHourInput(e.target.value)}
-              className="w-20 bg-red-950/20 border border-red-800/50 text-red-100 px-3 py-2 text-center focus:outline-none focus:border-yellow-500 transition-all"
+              style={{
+                width: "72px", padding: "9px 12px", textAlign: "center",
+                border: "1.5px solid #2E2E2E", borderRadius: "8px",
+                fontSize: "16px", fontWeight: "700", color: "#DDDDDD", outline: "none",
+              }}
             />
-            <span className="text-red-400/60 text-sm">:00</span>
+            <span style={{ color: "#666666", fontSize: "14px" }}>:00</span>
             <button
               onClick={handleSaveOpenHour}
               disabled={savingTime}
-              className="flex items-center gap-1 text-xs uppercase tracking-widest border border-yellow-500/50 text-yellow-500 px-3 py-2 hover:bg-yellow-500/10 disabled:opacity-50 transition-colors"
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "9px 16px",
+                background: timeSaved ? "#E8F5E9" : "linear-gradient(135deg, #F26A21, #E85D0E)",
+                border: "none", borderRadius: "8px",
+                color: timeSaved ? "#2E7D32" : "white",
+                fontWeight: "600", fontSize: "13px",
+                cursor: savingTime ? "not-allowed" : "pointer",
+                opacity: savingTime ? 0.7 : 1,
+              }}
             >
-              <Save className="w-3 h-3" />
-              {savingTime ? "Saving..." : timeSaved ? "Saved!" : "Simpan"}
+              <Save size={13} />
+              {savingTime ? "Menyimpan..." : timeSaved ? "Tersimpan!" : "Simpan"}
             </button>
-            <span className="text-red-500/40 text-xs">0–23</span>
+            <span style={{ fontSize: "11px", color: "#3F3F3F" }}>0–23</span>
           </div>
         </div>
 
-        <div className="border-2 border-red-900/40 bg-black/60 backdrop-blur">
-          <div className="flex items-center justify-between border-b-2 border-red-900/40 px-5 py-3 bg-red-950/20">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-red-400" />
-              <h2 className="text-red-300 uppercase tracking-[0.25em] text-xs font-bold">
-                Garis Depan
-              </h2>
+        {/* Queue list */}
+        <div style={{ background: "#1A1A1A", borderRadius: "20px", boxShadow: "0 2px 16px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+          {/* List header */}
+          <div style={{
+            padding: "16px 24px", borderBottom: "1.5px solid #252525",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "#161616", flexWrap: "wrap", gap: "10px",
+          }}>
+            <div style={{ fontSize: "14px", fontWeight: "700", color: "#DDDDDD", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Users size={15} color="#1CABE2" />
+              Daftar Antrian
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <button
                 onClick={loadQueue}
-                className="text-red-400/70 hover:text-yellow-500 transition-colors p-1"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#444444", padding: "4px" }}
                 title="Refresh"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw size={15} />
               </button>
               {queue.length > 0 && (
                 <button
                   onClick={handleReset}
-                  className="flex items-center gap-1 text-red-400/70 hover:text-red-500 text-[10px] uppercase tracking-widest border border-red-800/50 px-2 py-1 hover:border-red-500 transition-colors"
+                  style={{
+                    display: "flex", alignItems: "center", gap: "5px",
+                    padding: "6px 12px", background: "#2A0808",
+                    border: "1.5px solid #5A1010", borderRadius: "8px",
+                    color: "#EF5350", fontSize: "12px", fontWeight: "600",
+                    cursor: "pointer",
+                  }}
                 >
-                  <Trash2 className="w-3 h-3" /> Reset All
+                  <Trash2 size={12} /> Reset Semua
                 </button>
               )}
             </div>
           </div>
 
+          {/* Search bar */}
+          <div style={{ padding: "12px 24px", borderBottom: "1px solid #F3F4F6", background: "#161616" }}>
+            <div style={{ position: "relative" }}>
+              <Search size={14} color="#CCC" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama atau device ID..."
+                style={{
+                  width: "100%", padding: "9px 12px 9px 34px",
+                  border: "1.5px solid #2E2E2E", borderRadius: "8px",
+                  fontSize: "13px", color: "#DDDDDD", outline: "none", boxSizing: "border-box",
+                  background: "#1A1A1A",
+                }}
+              />
+            </div>
+          </div>
+
           {queue.length === 0 ? (
-            <div className="p-12 text-center">
-              <Trophy className="w-12 h-12 text-red-900 mx-auto mb-3" strokeWidth={1} />
-              <div className="text-red-500/60 uppercase tracking-widest text-xs">
-                Belum ada yang war
-              </div>
-              <div className="text-red-800 text-xs mt-2">Antrian kosong</div>
+            <div style={{ padding: "60px 24px", textAlign: "center" }}>
+              <div style={{ fontSize: "40px", marginBottom: "10px" }}>🍽️</div>
+              <div style={{ color: "#555555", fontSize: "14px" }}>Antrian kosong</div>
+            </div>
+          ) : filteredQueue.length === 0 ? (
+            <div style={{ padding: "40px 24px", textAlign: "center", color: "#444444", fontSize: "13px" }}>
+              Tidak ada hasil untuk "{search}"
             </div>
           ) : (
-            <div className="max-h-[600px] overflow-y-auto">
-              {queue.map((entry, idx) => {
+            <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+              {filteredQueue.map((entry, idx) => {
                 const isWahyudi =
                   entry.displayName?.toLowerCase() === "wahyudi" ||
                   entry.name?.toLowerCase() === "wahyudi"
+                const realIdx = queue.findIndex((e) => e.ticket === entry.ticket)
                 return (
                   <div
                     key={entry.ticket}
-                    className={`flex items-center gap-2 px-5 py-4 border-b border-red-900/20 hover:bg-red-950/20 transition-colors ${
-                      idx === 0 ? "bg-gradient-to-r from-yellow-500/10 to-transparent" : ""
-                    }`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px",
+                      padding: "13px 24px", borderBottom: "1px solid #222222",
+                      background: realIdx === 0 ? "#1A1800" : "#1A1A1A",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = "#252525"}
+                    onMouseOut={(e) => e.currentTarget.style.background = realIdx === 0 ? "#FFFBF5" : "white"}
                   >
-                    <div className="w-8 text-center">
-                      {idx === 0 ? (
-                        isWahyudi ? (
-                          <Crown className="w-5 h-5 text-yellow-500 mx-auto" />
-                        ) : (
-                          <Trophy className="w-5 h-5 text-yellow-500 mx-auto" />
-                        )
+                    {/* Rank */}
+                    <div style={{ width: "28px", textAlign: "center", flexShrink: 0 }}>
+                      {realIdx === 0 ? (
+                        isWahyudi
+                          ? <Crown size={17} color="#F26A21" />
+                          : <Trophy size={17} color="#F26A21" />
                       ) : (
-                        <span className="text-red-600/60 text-xs font-bold">
-                          {String(idx + 1).padStart(2, "0")}
+                        <span style={{ fontSize: "12px", fontWeight: "700", color: "#3F3F3F" }}>
+                          {String(realIdx + 1).padStart(2, "0")}
                         </span>
                       )}
                     </div>
 
-                    <div className="min-w-[60px]">
-                      <div
-                        className={`text-xl font-black leading-none ${
-                          idx === 0 ? "text-yellow-400" : "text-red-400"
-                        }`}
-                        style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-                      >
+                    {/* Ticket */}
+                    <div style={{ minWidth: "56px", flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: "18px", fontWeight: "800", fontFamily: "monospace",
+                        color: realIdx === 0 ? "#F26A21" : "#1CABE2",
+                      }}>
                         #{String(entry.ticket).padStart(3, "0")}
-                      </div>
+                      </span>
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="text-red-100 font-bold truncate">
+                    {/* Name */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: "600", color: "#EFEFEF", display: "flex", alignItems: "center", gap: "6px" }}>
                         {entry.displayName || entry.name}
-                        {isWahyudi && <span className="text-yellow-500 text-xs ml-2">(VIP)</span>}
+                        {isWahyudi && (
+                          <span style={{
+                            fontSize: "10px", background: "#2A1800", color: "#F26A21",
+                            padding: "2px 6px", borderRadius: "4px", fontWeight: "700",
+                          }}>VIP</span>
+                        )}
                       </div>
+                      {search && (entry.deviceId || "").toLowerCase().includes(search.toLowerCase()) && (
+                        <div style={{ fontSize: "10px", color: "#444444", fontFamily: "monospace", marginTop: "2px" }}>
+                          {entry.deviceId}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="text-red-600/60 text-[10px] uppercase tracking-widest tabular-nums hidden sm:block">
+                    {/* Time */}
+                    <div style={{ fontSize: "11px", color: "#3F3F3F", fontFamily: "monospace", flexShrink: 0 }}>
                       {formatTime(entry.timestamp)}
                     </div>
 
-                    <div className="flex gap-1">
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
                       <button
                         onClick={() => handleMoveUp(entry)}
-                        disabled={idx === 0}
-                        className="text-red-400/70 hover:text-yellow-500 disabled:opacity-30 disabled:cursor-not-allowed p-1"
-                        title="Move Up"
+                        disabled={realIdx === 0}
+                        title="Naikan"
+                        style={{
+                          background: "none", border: "none", cursor: realIdx === 0 ? "not-allowed" : "pointer",
+                          color: realIdx === 0 ? "#DDD" : "#888", padding: "4px", borderRadius: "5px",
+                        }}
+                        onMouseOver={(e) => realIdx !== 0 && (e.currentTarget.style.background = "#252525")}
+                        onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
                       >
-                        <ArrowUp className="w-4 h-4" />
+                        <ArrowUp size={15} />
                       </button>
                       <button
                         onClick={() => handleMoveDown(entry)}
-                        disabled={idx === queue.length - 1}
-                        className="text-red-400/70 hover:text-yellow-500 disabled:opacity-30 disabled:cursor-not-allowed p-1"
-                        title="Move Down"
+                        disabled={realIdx === queue.length - 1}
+                        title="Turunkan"
+                        style={{
+                          background: "none", border: "none",
+                          cursor: realIdx === queue.length - 1 ? "not-allowed" : "pointer",
+                          color: realIdx === queue.length - 1 ? "#DDD" : "#888", padding: "4px", borderRadius: "5px",
+                        }}
+                        onMouseOver={(e) => realIdx !== queue.length - 1 && (e.currentTarget.style.background = "#252525")}
+                        onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
                       >
-                        <ArrowDown className="w-4 h-4" />
+                        <ArrowDown size={15} />
                       </button>
                       <button
                         onClick={() => handleRemove(entry)}
-                        className="text-red-400/70 hover:text-red-500 p-1"
-                        title="Remove"
+                        title="Hapus"
+                        style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          color: "#EF5350", padding: "4px", borderRadius: "5px",
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = "#2A0808"}
+                        onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </div>
@@ -395,29 +469,18 @@ export default function WarYuhuAdmin() {
           )}
         </div>
 
-        <div className="mt-4 text-center text-red-500/60 text-xs uppercase tracking-widest">
-          * Admin dapat mengatur urutan queue dengan tombol ↑ ↓
+        <div style={{ textAlign: "center", marginTop: "20px", fontSize: "12px", color: "#3F3F3F" }}>
+          Admin dapat mengatur urutan antrian dengan tombol ↑ ↓
         </div>
       </div>
 
       <style>{`
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.3);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(185, 28, 28, 0.4);
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(234, 179, 8, 0.6);
-        }
-
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1A1A1A; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #F26A21; }
         input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-          opacity: 0.3;
-        }
+        input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
       `}</style>
     </div>
   )

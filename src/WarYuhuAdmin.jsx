@@ -11,6 +11,8 @@ import {
   ArrowUp,
   ArrowDown,
   Crown,
+  Clock,
+  Save,
 } from "lucide-react"
 import { supabase } from "./supabaseClient"
 
@@ -18,6 +20,10 @@ const MAX_QUEUE_SIZE = 10
 
 export default function WarYuhuAdmin() {
   const [queue, setQueue] = useState([])
+  const [openHour, setOpenHour] = useState(17)
+  const [openHourInput, setOpenHourInput] = useState("17")
+  const [savingTime, setSavingTime] = useState(false)
+  const [timeSaved, setTimeSaved] = useState(false)
 
   useEffect(() => {
     const isLoggedIn = sessionStorage.getItem("waryuhu:admin")
@@ -26,6 +32,7 @@ export default function WarYuhuAdmin() {
       return
     }
     loadQueue()
+    loadSettings()
     const channel = supabase
       .channel("queue-changes-admin")
       .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => {
@@ -40,6 +47,38 @@ export default function WarYuhuAdmin() {
   const handleLogout = () => {
     sessionStorage.removeItem("waryuhu:admin")
     window.location.hash = "#/"
+  }
+
+  const loadSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "queue_open_hour")
+        .single()
+      if (data) {
+        setOpenHour(parseInt(data.value))
+        setOpenHourInput(data.value)
+      }
+    } catch {
+      // fallback to default
+    }
+  }
+
+  const handleSaveOpenHour = async () => {
+    const hour = parseInt(openHourInput)
+    if (isNaN(hour) || hour < 0 || hour > 23) return
+    setSavingTime(true)
+    try {
+      await supabase
+        .from("settings")
+        .upsert({ key: "queue_open_hour", value: String(hour) })
+      setOpenHour(hour)
+      setTimeSaved(true)
+      setTimeout(() => setTimeSaved(false), 2000)
+    } finally {
+      setSavingTime(false)
+    }
   }
 
   const loadQueue = async () => {
@@ -179,7 +218,7 @@ export default function WarYuhuAdmin() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="border border-red-900/40 bg-black/40 p-4">
             <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
               Total Pejuang
@@ -201,6 +240,38 @@ export default function WarYuhuAdmin() {
             >
               {String(MAX_QUEUE_SIZE - queue.length).padStart(2, "0")}
             </div>
+          </div>
+        </div>
+
+        <div className="border border-yellow-500/20 bg-black/40 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-4 h-4 text-yellow-500" />
+            <span className="text-yellow-500 text-xs uppercase tracking-widest font-bold">
+              Jam Buka Queue
+            </span>
+            <span className="text-red-500/50 text-xs ml-auto">
+              Sekarang: {String(openHour).padStart(2, "0")}:00
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min="0"
+              max="23"
+              value={openHourInput}
+              onChange={(e) => setOpenHourInput(e.target.value)}
+              className="w-20 bg-red-950/20 border border-red-800/50 text-red-100 px-3 py-2 text-center focus:outline-none focus:border-yellow-500 transition-all"
+            />
+            <span className="text-red-400/60 text-sm">:00</span>
+            <button
+              onClick={handleSaveOpenHour}
+              disabled={savingTime}
+              className="flex items-center gap-1 text-xs uppercase tracking-widest border border-yellow-500/50 text-yellow-500 px-3 py-2 hover:bg-yellow-500/10 disabled:opacity-50 transition-colors"
+            >
+              <Save className="w-3 h-3" />
+              {savingTime ? "Saving..." : timeSaved ? "Saved!" : "Simpan"}
+            </button>
+            <span className="text-red-500/40 text-xs">0–23</span>
           </div>
         </div>
 
@@ -337,6 +408,11 @@ export default function WarYuhuAdmin() {
         }
         ::-webkit-scrollbar-thumb:hover {
           background: rgba(234, 179, 8, 0.6);
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          opacity: 0.3;
         }
       `}</style>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
   Swords,
   Ticket,
@@ -9,12 +9,10 @@ import {
   Zap,
   Ban,
   Clock,
-  Search,
 } from "lucide-react"
 import { supabase } from "./supabaseClient"
 
 const STORAGE_KEY = "waryuhu:queue"
-const COUNTER_KEY = "waryuhu:counter"
 const DEVICE_ID_KEY = "waryuhu:deviceId"
 const MAX_QUEUE_SIZE = 10
 
@@ -121,34 +119,34 @@ const getDeviceId = () => {
   return deviceId
 }
 
-const isRegistrationTime = () => {
+const getCountdown = (hour) => {
   const now = new Date()
-  const hours = now.getHours()
-  return hours === 17
-}
-
-const formatCurrentTime = () => {
-  const now = new Date()
-  return now.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
+  const target = new Date()
+  target.setHours(hour, 0, 0, 0)
+  if (now >= target) target.setDate(target.getDate() + 1)
+  const diff = target - now
+  const h = Math.floor(diff / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
+  const s = Math.floor((diff % 60000) / 1000)
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
 export default function WarYuhuUser() {
   const [queue, setQueue] = useState([])
   const [name, setName] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [openHour, setOpenHour] = useState(17)
   const [submitting, setSubmitting] = useState(false)
   const [lastTicket, setLastTicket] = useState(null)
   const [error, setError] = useState("")
   const [deviceId] = useState(getDeviceId())
-  const [currentTime, setCurrentTime] = useState(formatCurrentTime())
-  const [canRegister, setCanRegister] = useState(isRegistrationTime())
+  const [countdown, setCountdown] = useState("")
+  const [canRegister, setCanRegister] = useState(false)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     loadQueue()
+    loadSettings()
     const channel = supabase
       .channel("queue-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => {
@@ -161,12 +159,28 @@ export default function WarYuhuUser() {
   }, [])
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(formatCurrentTime())
-      setCanRegister(isRegistrationTime())
-    }, 1000)
+    const check = () => {
+      const isOpen = new Date().getHours() === openHour
+      setCanRegister(isOpen)
+      if (!isOpen) setCountdown(getCountdown(openHour))
+    }
+    check()
+    const timer = setInterval(check, 1000)
     return () => clearInterval(timer)
-  }, [])
+  }, [openHour])
+
+  const loadSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "queue_open_hour")
+        .single()
+      if (data) setOpenHour(parseInt(data.value))
+    } catch {
+      // fallback to default 17
+    }
+  }
 
   const loadQueue = async () => {
     try {
@@ -195,8 +209,8 @@ export default function WarYuhuUser() {
     return queue.some((entry) => entry.deviceId === deviceId)
   }
 
-  const hasNameRegistered = (name) => {
-    return queue.some((entry) => entry.displayName === name || entry.name === name)
+  const hasNameRegistered = (n) => {
+    return queue.some((entry) => entry.displayName === n || entry.name === n)
   }
 
   const getMyTicket = () => {
@@ -219,12 +233,17 @@ export default function WarYuhuUser() {
     }
 
     if (!canRegister) {
-      setError("Pendaftaran hanya bisa jam 17:00!")
+      setError(`Pendaftaran hanya bisa jam ${String(openHour).padStart(2, "0")}:00!`)
       return
     }
 
     if (!name.trim()) {
       setError("Pilih nama dari daftar!")
+      return
+    }
+
+    if (!WHITELISTED_USERS.includes(name.trim())) {
+      setError("Nama tidak ada di daftar! Pilih dari rekomendasi.")
       return
     }
 
@@ -285,7 +304,6 @@ export default function WarYuhuUser() {
 
       setLastTicket(entry)
       setName("")
-      setSearchQuery("")
     } catch (err) {
       setError("Gagal daftar, coba lagi ya!")
       console.error(err)
@@ -303,11 +321,11 @@ export default function WarYuhuUser() {
     })
   }
 
-  const availableNames = WHITELISTED_USERS.filter(
+  const suggestions = WHITELISTED_USERS.filter(
     (n) =>
       !hasNameRegistered(n) &&
-      (searchQuery === "" || n.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+      (name.trim() === "" || n.toLowerCase().includes(name.toLowerCase()))
+  ).slice(0, 8)
 
   const isQueueFull = queue.length >= MAX_QUEUE_SIZE
 
@@ -359,7 +377,12 @@ export default function WarYuhuUser() {
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {currentTime}
+              <Clock className="w-3 h-3" />
+              {canRegister ? (
+                <span className="text-yellow-500 font-bold animate-pulse">PERANG DIMULAI!</span>
+              ) : (
+                <span>Buka dalam <span className="text-yellow-500 tabular-nums font-bold">{countdown}</span></span>
+              )}
             </span>
           </div>
         </div>
@@ -391,11 +414,19 @@ export default function WarYuhuUser() {
 
               {!canRegister && !hasDeviceRegistered() && (
                 <div className="text-center py-6 mb-4 border-2 border-red-500/50 bg-red-950/30">
-                  <Clock className="w-12 h-12 text-red-500 mx-auto mb-3 animate-pulse" />
-                  <div className="text-red-400 text-sm uppercase tracking-widest">
-                    Pendaftaran hanya jam 17:00
+                  <Clock className="w-10 h-10 text-red-500 mx-auto mb-3 animate-pulse" />
+                  <div className="text-red-400 text-xs uppercase tracking-widest mb-3">
+                    Perang dibuka jam {String(openHour).padStart(2, "0")}:00
                   </div>
-                  <div className="text-red-500/70 text-xs mt-2">Waktu now: {currentTime}</div>
+                  <div
+                    className="text-4xl font-black text-yellow-400 tabular-nums tracking-widest"
+                    style={{ fontFamily: "'Bebas Neue', sans-serif" }}
+                  >
+                    {countdown}
+                  </div>
+                  <div className="text-red-600/50 text-[10px] uppercase tracking-widest mt-2">
+                    countdown to war
+                  </div>
                 </div>
               )}
 
@@ -410,43 +441,45 @@ export default function WarYuhuUser() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-red-300/80 text-xs uppercase tracking-widest mb-2">
-                      &gt; Cari Nama
+                      &gt; Nama Lo
                     </label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-600/50" />
                       <input
+                        ref={inputRef}
                         type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search nama..."
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value)
+                          setShowSuggestions(true)
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                        placeholder="Ketik nama lo..."
                         disabled={!canRegister || isQueueFull}
-                        className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 pl-10 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-red-800/50"
+                        className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-red-800/50"
                       />
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div className="absolute z-10 w-full bg-[#120505] border border-red-800/50 border-t-0 max-h-48 overflow-y-auto">
+                          {suggestions.map((n) => (
+                            <div
+                              key={n}
+                              onMouseDown={() => {
+                                setName(n)
+                                setShowSuggestions(false)
+                              }}
+                              className="px-4 py-2 text-red-100 text-sm hover:bg-red-950/60 cursor-pointer border-b border-red-900/20"
+                            >
+                              {n}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {showSuggestions && name.trim() !== "" && suggestions.length === 0 && (
+                        <div className="absolute z-10 w-full bg-[#120505] border border-red-800/50 border-t-0 px-4 py-2 text-red-500 text-xs uppercase tracking-widest">
+                          Nama tidak ditemukan
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-red-300/80 text-xs uppercase tracking-widest mb-2">
-                      &gt; Pilih Nama ({availableNames.length} tersedia)
-                    </label>
-                    <select
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      disabled={!canRegister || isQueueFull}
-                      className="w-full bg-red-950/20 border border-red-800/50 text-red-100 px-4 py-3 focus:outline-none focus:border-yellow-500 focus:bg-red-950/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">-- Pilih nama lo --</option>
-                      {availableNames.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                    {availableNames.length === 0 && canRegister && !isQueueFull && (
-                      <div className="text-red-500 text-xs mt-2 uppercase tracking-widest">
-                        Semua nama udah diambil!
-                      </div>
-                    )}
                   </div>
 
                   {error && (
@@ -505,7 +538,7 @@ export default function WarYuhuUser() {
               </div>
               <div className="border border-red-900/40 bg-black/40 p-4">
                 <div className="text-red-400/60 text-[10px] uppercase tracking-widest mb-1">
-                  Slot Tersisa
+                  Yuhu Tersisa
                 </div>
                 <div
                   className={`text-3xl font-black ${MAX_QUEUE_SIZE - queue.length <= 2 ? "text-red-500" : "text-yellow-500"}`}
@@ -607,19 +640,6 @@ export default function WarYuhuUser() {
         @keyframes pulse-glow {
           0%, 100% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
           50% { box-shadow: 0 0 40px rgba(234, 179, 8, 0.4); }
-        }
-
-        select {
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 12px center;
-          background-size: 16px;
-        }
-
-        select option {
-          background: #1a0a0a;
-          color: #fef2f2;
         }
 
         ::-webkit-scrollbar {
